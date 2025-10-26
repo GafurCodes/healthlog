@@ -1,0 +1,7 @@
+{
+  "name": "healthlog-web",
+  "private": true,
+  "scripts": {
+    "build": "mkdir -p dist && cp index.html dist/index.html"
+  }
+}
