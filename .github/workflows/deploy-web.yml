@@ -1,0 +1,35 @@
+name: Deploy Web
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - "apps/web/**"
+      - ".github/workflows/deploy-web.yml"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Rsync Web sources to server
+        run: |
+          rsync -az --delete apps/web/ ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/var/www/healthlog/web/
+
+      - name: Install deps, build, and reload Nginx
+        run: |
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'REMOTE'
+          set -e
+          cd /var/www/healthlog/web
+          npm ci
+          npm run build
+          sudo nginx -t && sudo systemctl reload nginx
+          REMOTE

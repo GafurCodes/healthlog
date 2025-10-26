@@ -1,0 +1,39 @@
+name: Deploy API
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - "apps/api/**"
+      - ".github/workflows/deploy-api.yml"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Rsync API sources to server
+        run: |
+          rsync -az --delete apps/api/ ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/var/www/healthlog/api/
+
+      - name: Install, build, and restart API with PM2
+        run: |
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'REMOTE'
+          set -e
+          cd /var/www/healthlog/api
+          npm ci
+          npm run build
+          export NODE_ENV='${{ secrets.NODE_ENV }}'
+          export MONGO_URI='${{ secrets.MONGO_URI }}'
+          pm2 delete healthlog-api >/dev/null 2>&1 || true
+          pm2 start dist/index.js --name healthlog-api
+          pm2 save
+          REMOTE
