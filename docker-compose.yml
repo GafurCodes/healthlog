@@ -1,0 +1,85 @@
+services:
+  # MongoDB Database
+  mongodb:
+    image: mongo
+    container_name: healthlog-mongodb
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: mongo
+      MONGO_INITDB_ROOT_PASSWORD: healthlog_password
+      MONGO_INITDB_DATABASE: healthlog
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+      - mongodb_config:/data/configdb
+    networks:
+      - healthlog
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+
+  # API Service
+  api:
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile
+    container_name: healthlog-api
+    restart: unless-stopped
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      MONGODB_URI: mongodb://mongo:healthlog_password@mongodb:27017/healthlog?authSource=admin
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-change_me_in_production_access_secret_key}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-change_me_in_production_refresh_secret_key}
+      JWT_ACCESS_EXPIRES: 15m
+      JWT_REFRESH_EXPIRES: 7d
+      CORS_ORIGIN: ${CORS_ORIGIN:-*}
+      EMAIL_FROM: ${EMAIL_FROM:-noreply@healthlog.app}
+      SMTP_HOST: ${SMTP_HOST:-smtp.gmail.com}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER}
+      SMTP_PASSWORD: ${SMTP_PASSWORD}
+      APP_BASE_URL: ${APP_BASE_URL:-http://localhost}
+      API_BASE_URL: ${API_BASE_URL:-http://localhost/api}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+    ports:
+      - "4000:4000"
+    networks:
+      - healthlog
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4000/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # Web Frontend Service
+  web:
+    build:
+      context: ./apps/web
+      dockerfile: Dockerfile
+    container_name: healthlog-web
+    restart: unless-stopped
+    depends_on:
+      - api
+    environment:
+      VITE_API_BASE_URL: ${VITE_API_BASE_URL:-/api}
+    ports:
+      - "80:80"
+    networks:
+      - healthlog
+
+networks:
+  healthlog:
+    driver: bridge
+
+volumes:
+  mongodb_data:
+  mongodb_config:

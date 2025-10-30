@@ -32,8 +32,22 @@ jobs:
           npm ci
           npm run build
           export NODE_ENV='${{ secrets.NODE_ENV }}'
-          export MONGO_URI='${{ secrets.MONGO_URI }}'
+          export PORT='${{ secrets.PORT }}'
+          export MONGODB_URI='${{ secrets.MONGODB_URI }}'
+          export JWT_ACCESS_SECRET='${{ secrets.JWT_ACCESS_SECRET }}'
+          export JWT_REFRESH_SECRET='${{ secrets.JWT_REFRESH_SECRET }}'
+          export JWT_ACCESS_EXPIRES='${{ secrets.JWT_ACCESS_EXPIRES }}'
+          export JWT_REFRESH_EXPIRES='${{ secrets.JWT_REFRESH_EXPIRES }}'
+          export CORS_ORIGIN='${{ secrets.CORS_ORIGIN }}'
+          export EMAIL_FROM='${{ secrets.EMAIL_FROM }}'
+          export SMTP_HOST='${{ secrets.SMTP_HOST }}'
+          export SMTP_PORT='${{ secrets.SMTP_PORT }}'
+          export SMTP_USER='${{ secrets.SMTP_USER }}'
+          export SMTP_PASSWORD='${{ secrets.SMTP_PASSWORD }}'
+          export APP_BASE_URL='${{ secrets.APP_BASE_URL }}'
+          export API_BASE_URL='${{ secrets.API_BASE_URL }}'
+          export LOG_LEVEL='${{ secrets.LOG_LEVEL }}'
           pm2 delete healthlog-api >/dev/null 2>&1 || true
-          pm2 start dist/index.js --name healthlog-api
+          pm2 start dist/server.js --name healthlog-api
           pm2 save
           REMOTE

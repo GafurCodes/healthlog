@@ -1,0 +1,7 @@
+node_modules
+CLAUDE*
+.env
+dist
+coverage
+*.log
+.DS_Store
