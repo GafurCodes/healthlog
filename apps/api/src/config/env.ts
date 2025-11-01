@@ -20,8 +20,6 @@ const envSchema = z.object({
 
   APP_BASE_URL: z.string().url('Invalid APP_BASE_URL'),
   API_BASE_URL: z.string().url('Invalid API_BASE_URL'),
-
-  LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error']).default('info'),
 });
 
 export type Env = z.infer<typeof envSchema>;

@@ -27,16 +27,13 @@ export interface AuthResponse {
 export async function register(data: RegisterInput): Promise<{ message: string }> {
   const { email, password, name } = data;
 
-  // Check if user already exists
   const existingUser = await User.findOne({ email });
   if (existingUser) {
     throw new Error('User already exists with this email');
   }
 
-  // Hash password with argon2
   const hashedPassword = await argon2.hash(password);
 
-  // Create user (auto-verified for now, email disabled)
   const user = await User.create({
     email,
     password: hashedPassword,
@@ -44,7 +41,6 @@ export async function register(data: RegisterInput): Promise<{ message: string }
     emailVerified: true, // Auto-verify for development
   });
 
-  // Send verification email (non-blocking, logs errors but doesn't fail)
   sendVerificationEmail(user.email, user.name, '').catch((error) => {
     console.error('Failed to send verification email:', error);
   });
@@ -57,19 +53,16 @@ export async function register(data: RegisterInput): Promise<{ message: string }
 export async function login(data: LoginInput): Promise<AuthResponse> {
   const { email, password } = data;
 
-  // Find user
   const user = await User.findOne({ email });
   if (!user) {
     throw new Error('Invalid email or password');
   }
 
-  // Verify password
   const isPasswordValid = await argon2.verify(user.password, password);
   if (!isPasswordValid) {
     throw new Error('Invalid email or password');
   }
 
-  // Generate tokens
   const tokens = generateTokens({
     userId: (user._id as Types.ObjectId).toString(),
     email: user.email,
@@ -115,7 +108,6 @@ export async function forgotPassword(data: ForgotPasswordInput): Promise<{ messa
     return { message: 'If an account exists with this email, a password reset link has been sent.' };
   }
 
-  // Generate reset token
   const resetToken = generateToken();
   const hashedResetToken = hashToken(resetToken);
 
@@ -123,7 +115,6 @@ export async function forgotPassword(data: ForgotPasswordInput): Promise<{ messa
   user.passwordResetTokenExpiresAt = getTokenExpirationDate(1); // 1 hour
   await user.save();
 
-  // Send reset email
   await sendPasswordResetEmail(user.email, user.name, resetToken);
 
   return { message: 'If an account exists with this email, a password reset link has been sent.' };
@@ -143,7 +134,6 @@ export async function resetPassword(data: ResetPasswordInput): Promise<{ message
     throw new Error('Invalid or expired reset token');
   }
 
-  // Hash new password
   const hashedPassword = await argon2.hash(password);
 
   user.password = hashedPassword;
@@ -155,16 +145,13 @@ export async function resetPassword(data: ResetPasswordInput): Promise<{ message
 }
 
 export async function refreshAccessToken(refreshToken: string): Promise<AuthResponse> {
-  // Verify refresh token
   const payload = verifyRefreshToken(refreshToken);
 
-  // Find user
   const user = await User.findById(payload.userId);
   if (!user) {
     throw new Error('User not found');
   }
 
-  // Generate new tokens
   const tokens = generateTokens({
     userId: (user._id as Types.ObjectId).toString(),
     email: user.email,

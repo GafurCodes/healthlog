@@ -3,6 +3,7 @@ services:
     image: mongo
     container_name: healthlog-mongodb
     restart: unless-stopped
+    command: ["mongod", "--quiet"]
     environment:
       MONGO_INITDB_ROOT_USERNAME: mongo
       MONGO_INITDB_ROOT_PASSWORD: healthlog_password
@@ -16,7 +17,7 @@ services:
       - healthlog
     healthcheck:
       test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
-      interval: 10s
+      interval: 60s
       timeout: 5s
       retries: 5
       start_period: 40s
@@ -36,7 +37,7 @@ services:
       - healthlog
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:4000/api/health"]
-      interval: 10s
+      interval: 60s
       timeout: 5s
       retries: 5
       start_period: 30s

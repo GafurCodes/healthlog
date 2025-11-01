@@ -59,7 +59,6 @@ const logSchema = new Schema<ILog>(
   }
 );
 
-// Indexes for efficient querying
 logSchema.index({ userId: 1, date: -1 });
 logSchema.index({ userId: 1, type: 1, date: -1 });
 logSchema.index({ date: 1 });

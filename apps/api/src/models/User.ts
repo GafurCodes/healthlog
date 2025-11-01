@@ -55,7 +55,6 @@ const userSchema = new Schema<IUser>(
   }
 );
 
-// Indexes for performance
 userSchema.index({ email: 1 });
 userSchema.index({ emailVerificationToken: 1 }, { sparse: true });
 userSchema.index({ passwordResetToken: 1 }, { sparse: true });

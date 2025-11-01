@@ -1,8 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { verifyAccessToken, JWTPayload } from '../utils/jwt.js';
-import { getLogger } from '../config/logger.js';
 
-// Extend Express Request type to include user
 declare global {
   namespace Express {
     interface Request {
@@ -12,10 +10,7 @@ declare global {
 }
 
 export function requireAuth(req: Request, res: Response, next: NextFunction): void {
-  const logger = getLogger();
-
   try {
-    // Get token from Authorization header
     const authHeader = req.headers.authorization;
 
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -23,17 +18,15 @@ export function requireAuth(req: Request, res: Response, next: NextFunction): vo
       return;
     }
 
-    const token = authHeader.substring(7); // Remove 'Bearer ' prefix
+    const token = authHeader.substring(7);
 
-    // Verify token
     const payload = verifyAccessToken(token);
 
-    // Attach user to request
     req.user = payload;
 
     next();
   } catch (error) {
-    logger.error('Authentication error', error);
+    console.error('Authentication error', error);
 
     if (error instanceof Error && error.name === 'TokenExpiredError') {
       res.status(401).json({ error: 'Token expired' });

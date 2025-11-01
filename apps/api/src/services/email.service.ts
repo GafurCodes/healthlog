@@ -1,6 +1,5 @@
 import nodemailer from 'nodemailer';
 import { getEnv } from '../config/env.js';
-import { getLogger } from '../config/logger.js';
 
 let transporter: nodemailer.Transporter;
 
@@ -24,7 +23,6 @@ export async function sendVerificationEmail(
   token: string
 ): Promise<void> {
   const env = getEnv();
-  const logger = getLogger();
 
   const verificationUrl = `${env.APP_BASE_URL}/verify-email?token=${token}`;
 
@@ -44,9 +42,9 @@ export async function sendVerificationEmail(
       `,
     });
 
-    logger.info(`Verification email sent to ${to}`);
+    console.log(`Verification email sent to ${to}`);
   } catch (error) {
-    logger.error(`Failed to send verification email to ${to}`, error);
+    console.error(`Failed to send verification email to ${to}`, error);
     throw new Error('Failed to send verification email');
   }
 }
@@ -57,7 +55,6 @@ export async function sendPasswordResetEmail(
   token: string
 ): Promise<void> {
   const env = getEnv();
-  const logger = getLogger();
 
   const resetUrl = `${env.APP_BASE_URL}/reset-password?token=${token}`;
 
@@ -78,9 +75,9 @@ export async function sendPasswordResetEmail(
       `,
     });
 
-    logger.info(`Password reset email sent to ${to}`);
+    console.log(`Password reset email sent to ${to}`);
   } catch (error) {
-    logger.error(`Failed to send password reset email to ${to}`, error);
+    console.error(`Failed to send password reset email to ${to}`, error);
     throw new Error('Failed to send password reset email');
   }
 }

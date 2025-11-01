@@ -69,7 +69,6 @@ export async function deleteLog(userId: string, logId: string): Promise<void> {
 export async function searchLogs(userId: string, query: SearchLogsInput): Promise<PaginatedLogs> {
   const { type, startDate, endDate, page, pageSize } = query;
 
-  // Build filter
   const filter: any = { userId };
 
   if (type) {
@@ -86,14 +85,11 @@ export async function searchLogs(userId: string, query: SearchLogsInput): Promis
     }
   }
 
-  // Count total documents
   const total = await Log.countDocuments(filter);
 
-  // Calculate pagination
   const totalPages = Math.ceil(total / pageSize);
   const skip = (page - 1) * pageSize;
 
-  // Fetch logs
   const logs = await Log.find(filter)
     .sort({ date: -1 })
     .skip(skip)

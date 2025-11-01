@@ -8,7 +8,6 @@ import argon2 from 'argon2';
 import logRoutes from '../routes/log.routes.js';
 import { errorHandler } from '../middleware/error.js';
 
-// Create test app
 const app = express();
 app.use(express.json());
 app.use('/api/logs', logRoutes);
@@ -19,7 +18,6 @@ let userId: string;
 
 describe('Log Routes', () => {
   beforeEach(async () => {
-    // Create test user
     const hashedPassword = await argon2.hash('Test1234');
     const user = await User.create({
       email: 'test@example.com',
@@ -30,7 +28,6 @@ describe('Log Routes', () => {
 
     userId = (user._id as Types.ObjectId).toString();
 
-    // Generate auth token
     const tokens = generateTokens({
       userId: (user._id as Types.ObjectId).toString(),
       email: user.email,
@@ -229,7 +226,6 @@ describe('Log Routes', () => {
     });
 
     it('should not allow updating another user\'s log', async () => {
-      // Create another user
       const otherUser = await User.create({
         email: 'other@example.com',
         password: await argon2.hash('Test1234'),
