@@ -39,30 +39,40 @@ export const DashboardPage: React.FC = () => {
     loadLogs();
   }, [startDate, endDate]);
 
-  const mealLogs = logs.filter((l) => l.metrics.type === 'meal');
-  const workoutLogs = logs.filter((l) => l.metrics.type === 'workout');
-  const sleepLogs = logs.filter((l) => l.metrics.type === 'sleep');
+  const mealLogs = logs.filter((l) => l.type === 'meal');
+  const workoutLogs = logs.filter((l) => l.type === 'workout');
+  const sleepLogs = logs.filter((l) => l.type === 'sleep');
 
-  const totalCalories = mealLogs.reduce((sum, l) => sum + (l.metrics.type === 'meal' ? l.metrics.calories : 0), 0);
+  const totalCalories = mealLogs.reduce((sum, l) => {
+    const metrics = l.metrics as Omit<import('../types').MealLog, 'type'>;
+    return sum + (metrics.calories || 0);
+  }, 0);
+  
   const avgSleep = sleepLogs.length > 0
-    ? (sleepLogs.reduce((sum, l) => sum + (l.metrics.type === 'sleep' ? l.metrics.duration : 0), 0) / sleepLogs.length).toFixed(1)
+    ? (sleepLogs.reduce((sum, l) => {
+        const metrics = l.metrics as Omit<import('../types').SleepLog, 'type'>;
+        return sum + (metrics.duration || 0);
+      }, 0) / sleepLogs.length).toFixed(1)
     : 0;
 
   const caloriesByDay = mealLogs.reduce((acc: Record<string, number>, log) => {
     const day = log.date.split('T')[0];
-    acc[day] = (acc[day] || 0) + (log.metrics.type === 'meal' ? log.metrics.calories : 0);
+    const metrics = log.metrics as Omit<import('../types').MealLog, 'type'>;
+    acc[day] = (acc[day] || 0) + (metrics.calories || 0);
     return acc;
   }, {});
 
   const workoutDurationByDay = workoutLogs.reduce((acc: Record<string, number>, log) => {
     const day = log.date.split('T')[0];
-    acc[day] = (acc[day] || 0) + (log.metrics.type === 'workout' ? log.metrics.duration : 0);
+    const metrics = log.metrics as Omit<import('../types').WorkoutLog, 'type'>;
+    acc[day] = (acc[day] || 0) + (metrics.duration || 0);
     return acc;
   }, {});
 
   const sleepByDay = sleepLogs.reduce((acc: Record<string, number>, log) => {
     const day = log.date.split('T')[0];
-    acc[day] = (acc[day] || 0) + (log.metrics.type === 'sleep' ? log.metrics.duration : 0);
+    const metrics = log.metrics as Omit<import('../types').SleepLog, 'type'>;
+    acc[day] = (acc[day] || 0) + (metrics.duration || 0);
     return acc;
   }, {});
 

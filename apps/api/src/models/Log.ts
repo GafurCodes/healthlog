@@ -13,7 +13,7 @@ export interface IMealLog {
 export interface IWorkoutLog {
   name?: string;
   duration?: number; // in minutes
-  type?: 'cardio' | 'strength' | 'flexibility';
+  workoutType?: 'cardio' | 'strength' | 'flexibility';
   intensity?: 'low' | 'moderate' | 'high';
   caloriesBurned?: number;
 }

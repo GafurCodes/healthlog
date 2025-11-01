@@ -64,14 +64,19 @@ export const LogsPage: React.FC = () => {
   };
 
   const getLogSummary = (log: Log) => {
-    const metrics = log.metrics;
-    switch (metrics.type) {
-      case 'meal':
+    switch (log.type) {
+      case 'meal': {
+        const metrics = log.metrics as Omit<import('../types').MealLog, 'type'>;
         return `${metrics.name} - ${metrics.calories} kcal`;
-      case 'workout':
+      }
+      case 'workout': {
+        const metrics = log.metrics as Omit<import('../types').WorkoutLog, 'type'>;
         return `${metrics.name} - ${metrics.duration} min (${metrics.intensity})`;
-      case 'sleep':
+      }
+      case 'sleep': {
+        const metrics = log.metrics as Omit<import('../types').SleepLog, 'type'>;
         return `Sleep - ${metrics.duration}h (${metrics.quality})`;
+      }
     }
   };
 

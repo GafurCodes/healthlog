@@ -16,11 +16,25 @@ export const logsApi = {
   get: (id: string) =>
     apiClient.get<{ data: Log }>(`/logs/${id}`),
 
-  create: (metrics: LogMetrics, date: string, notes?: string) =>
-    apiClient.post<{ data: Log }>('/logs', { metrics, date, notes }),
+  create: (metrics: LogMetrics, date: string, notes?: string) => {
+    const { type, ...metricsWithoutType } = metrics;
+    return apiClient.post<{ data: Log }>('/logs', { 
+      type, 
+      metrics: metricsWithoutType, 
+      date, 
+      notes 
+    });
+  },
 
-  update: (id: string, metrics: LogMetrics, date: string, notes?: string) =>
-    apiClient.put<{ data: Log }>(`/logs/${id}`, { metrics, date, notes }),
+  update: (id: string, metrics: LogMetrics, date: string, notes?: string) => {
+    const { type, ...metricsWithoutType } = metrics;
+    return apiClient.put<{ data: Log }>(`/logs/${id}`, { 
+      type, 
+      metrics: metricsWithoutType, 
+      date, 
+      notes 
+    });
+  },
 
   delete: (id: string) =>
     apiClient.delete(`/logs/${id}`),

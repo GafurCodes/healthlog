@@ -16,7 +16,7 @@ interface FormData {
   date: string;
   notes: string;
   meal?: { name: string; calories: string; protein: string; carbs: string; fat: string };
-  workout?: { name: string; duration: string; intensity: 'low' | 'moderate' | 'high'; caloriesBurned: string };
+  workout?: { name: string; duration: string; workoutType: 'cardio' | 'strength' | 'flexibility'; intensity: 'low' | 'moderate' | 'high'; caloriesBurned: string };
   sleep?: { duration: string; quality: 'poor' | 'fair' | 'good' | 'excellent' };
 }
 
@@ -31,7 +31,7 @@ export const LogFormPage: React.FC = () => {
     date: format(new Date(), 'yyyy-MM-dd'),
     notes: '',
     meal: { name: '', calories: '', protein: '', carbs: '', fat: '' },
-    workout: { name: '', duration: '', intensity: 'moderate', caloriesBurned: '' },
+    workout: { name: '', duration: '', workoutType: 'cardio', intensity: 'moderate', caloriesBurned: '' },
     sleep: { duration: '', quality: 'good' },
   });
 
@@ -41,32 +41,35 @@ export const LogFormPage: React.FC = () => {
         .get(id)
         .then((res) => {
           const log = res.data.data;
-          const metrics = log.metrics;
           const newForm: FormData = {
-            type: metrics.type,
+            type: log.type,
             date: log.date.split('T')[0],
             notes: log.notes || '',
           };
 
-          if (metrics.type === 'meal') {
+          if (log.type === 'meal') {
+            const metrics = log.metrics as Omit<import('../types').MealLog, 'type'>;
             newForm.meal = {
-              name: metrics.name,
-              calories: String(metrics.calories),
-              protein: String(metrics.protein),
-              carbs: String(metrics.carbs),
-              fat: String(metrics.fat),
+              name: metrics.name || '',
+              calories: String(metrics.calories || ''),
+              protein: String(metrics.protein || ''),
+              carbs: String(metrics.carbs || ''),
+              fat: String(metrics.fat || ''),
             };
-          } else if (metrics.type === 'workout') {
+          } else if (log.type === 'workout') {
+            const metrics = log.metrics as Omit<import('../types').WorkoutLog, 'type'>;
             newForm.workout = {
-              name: metrics.name,
-              duration: String(metrics.duration),
-              intensity: metrics.intensity,
-              caloriesBurned: String(metrics.caloriesBurned),
+              name: metrics.name || '',
+              duration: String(metrics.duration || ''),
+              workoutType: metrics.workoutType || 'cardio',
+              intensity: metrics.intensity || 'moderate',
+              caloriesBurned: String(metrics.caloriesBurned || 0),
             };
-          } else if (metrics.type === 'sleep') {
+          } else if (log.type === 'sleep') {
+            const metrics = log.metrics as Omit<import('../types').SleepLog, 'type'>;
             newForm.sleep = {
-              duration: String(metrics.duration),
-              quality: metrics.quality,
+              duration: String(metrics.duration || ''),
+              quality: metrics.quality || 'good',
             };
           }
 
@@ -87,17 +90,18 @@ export const LogFormPage: React.FC = () => {
         type: 'meal',
         name: form.meal.name,
         calories: Number(form.meal.calories),
-        protein: Number(form.meal.protein),
-        carbs: Number(form.meal.carbs),
-        fat: Number(form.meal.fat),
+        protein: Number(form.meal.protein) || undefined,
+        carbs: Number(form.meal.carbs) || undefined,
+        fat: Number(form.meal.fat) || undefined,
       };
     } else if (type === 'workout' && form.workout) {
       return {
         type: 'workout',
         name: form.workout.name,
         duration: Number(form.workout.duration),
+        workoutType: form.workout.workoutType,
         intensity: form.workout.intensity,
-        caloriesBurned: Number(form.workout.caloriesBurned),
+        caloriesBurned: Number(form.workout.caloriesBurned) || undefined,
       };
     } else if (type === 'sleep' && form.sleep) {
       return {
@@ -231,6 +235,21 @@ export const LogFormPage: React.FC = () => {
                   value={form.workout.duration}
                   onChange={(e) => setForm({ ...form, workout: { ...form.workout!, duration: e.target.value } })}
                   required
+                />
+                <Select
+                  label="Workout Type"
+                  value={form.workout.workoutType}
+                  onChange={(e) =>
+                    setForm({
+                      ...form,
+                      workout: { ...form.workout!, workoutType: e.target.value as 'cardio' | 'strength' | 'flexibility' },
+                    })
+                  }
+                  options={[
+                    { value: 'cardio', label: 'Cardio' },
+                    { value: 'strength', label: 'Strength' },
+                    { value: 'flexibility', label: 'Flexibility' },
+                  ]}
                 />
                 <Select
                   label="Intensity"

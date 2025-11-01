@@ -14,9 +14,20 @@ export function createApp(): express.Application {
 
   app.use(helmet());
 
+  // Parse CORS_ORIGIN to handle multiple origins
+  const corsOrigins = env.CORS_ORIGIN.split(',').map(origin => origin.trim());
+  
   app.use(
     cors({
-      origin: env.CORS_ORIGIN,
+      origin: corsOrigins.length === 1 && corsOrigins[0] === '*' 
+        ? '*' 
+        : (origin, callback) => {
+            if (!origin || corsOrigins.includes(origin)) {
+              callback(null, true);
+            } else {
+              callback(new Error('Not allowed by CORS'));
+            }
+          },
       credentials: true,
     })
   );

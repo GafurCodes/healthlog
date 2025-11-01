@@ -51,7 +51,7 @@ const mealMetricsSchema = z.object({
 const workoutMetricsSchema = z.object({
   name: z.string().optional(),
   duration: z.number().min(0).optional(),
-  type: z.enum(['cardio', 'strength', 'flexibility']).optional(),
+  workoutType: z.enum(['cardio', 'strength', 'flexibility']).optional(),
   intensity: z.enum(['low', 'moderate', 'high']).optional(),
   caloriesBurned: z.number().positive().optional(),
 });
