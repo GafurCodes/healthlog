@@ -34,19 +34,24 @@ export async function register(data: RegisterInput): Promise<{ message: string }
 
   const hashedPassword = await argon2.hash(password);
 
+  // Generate verification token
+  const verificationToken = generateToken();
+  const hashedVerificationToken = hashToken(verificationToken);
+
   const user = await User.create({
     email,
     password: hashedPassword,
     name,
-    emailVerified: true, // Auto-verify for development
+    emailVerified: false,
+    emailVerificationToken: hashedVerificationToken,
+    emailVerificationTokenExpiresAt: getTokenExpirationDate(24), // 24 hours
   });
 
-  sendVerificationEmail(user.email, user.name, '').catch((error) => {
-    console.error('Failed to send verification email:', error);
-  });
+  // Send verification email with actual token
+  await sendVerificationEmail(user.email, user.name, verificationToken);
 
   return {
-    message: 'Registration successful. You can now log in.',
+    message: 'Registration successful. Please check your email to verify your account.',
   };
 }
 
@@ -61,6 +66,11 @@ export async function login(data: LoginInput): Promise<AuthResponse> {
   const isPasswordValid = await argon2.verify(user.password, password);
   if (!isPasswordValid) {
     throw new Error('Invalid email or password');
+  }
+
+  // Enforce email verification
+  if (!user.emailVerified) {
+    throw new Error('Please verify your email before logging in. Check your inbox for the verification link.');
   }
 
   const tokens = generateTokens({
