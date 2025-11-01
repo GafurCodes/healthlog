@@ -32,8 +32,8 @@ export function initializeEnv(): Env {
     return env;
   } catch (error) {
     if (error instanceof z.ZodError) {
-      const formatted = error.errors
-        .map((e) => `${e.path.join('.')}: ${e.message}`)
+      const formatted = (error as any).errors
+        .map((e: any) => `${e.path.join('.')}: ${e.message}`)
         .join('\n');
       throw new Error(`Environment validation failed:\n${formatted}`);
     }

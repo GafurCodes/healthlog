@@ -41,36 +41,38 @@ export const refreshTokenSchema = z.object({
 
 // Log validation schemas
 const mealMetricsSchema = z.object({
+  name: z.string().optional(),
   calories: z.number().min(0).optional(),
   carbs: z.number().min(0).optional(),
   protein: z.number().min(0).optional(),
   fat: z.number().min(0).optional(),
-  notes: z.string().optional(),
 });
 
 const workoutMetricsSchema = z.object({
+  name: z.string().optional(),
   duration: z.number().min(0).optional(),
   type: z.enum(['cardio', 'strength', 'flexibility']).optional(),
   intensity: z.enum(['low', 'moderate', 'high']).optional(),
-  notes: z.string().optional(),
+  caloriesBurned: z.number().positive().optional(),
 });
 
 const sleepMetricsSchema = z.object({
   duration: z.number().min(0).optional(),
-  quality: z.number().min(1).max(10).optional(),
-  notes: z.string().optional(),
+  quality: z.enum(['poor', 'fair', 'good', 'excellent']).optional(),
 });
 
 export const createLogSchema = z.object({
   type: z.enum(['meal', 'workout', 'sleep']),
   metrics: z.union([mealMetricsSchema, workoutMetricsSchema, sleepMetricsSchema]),
   date: z.string().datetime().optional(),
+  notes: z.string().optional(),
 });
 
 export const updateLogSchema = z.object({
   type: z.enum(['meal', 'workout', 'sleep']).optional(),
   metrics: z.union([mealMetricsSchema, workoutMetricsSchema, sleepMetricsSchema]).optional(),
   date: z.string().datetime().optional(),
+  notes: z.string().optional(),
 });
 
 export const searchLogsSchema = z.object({

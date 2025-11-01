@@ -17,7 +17,7 @@ export function errorHandler(
   if (error instanceof ZodError) {
     res.status(400).json({
       error: 'Validation error',
-      details: error.errors.map((e) => ({
+      details: (error as any).errors.map((e: any) => ({
         field: e.path.join('.'),
         message: e.message,
       })),

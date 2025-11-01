@@ -3,24 +3,24 @@ import mongoose, { Document, Schema, Types } from 'mongoose';
 export type LogType = 'meal' | 'workout' | 'sleep';
 
 export interface IMealLog {
+  name?: string;
   calories?: number;
   carbs?: number;
   protein?: number;
   fat?: number;
-  notes?: string;
 }
 
 export interface IWorkoutLog {
+  name?: string;
   duration?: number; // in minutes
   type?: 'cardio' | 'strength' | 'flexibility';
   intensity?: 'low' | 'moderate' | 'high';
-  notes?: string;
+  caloriesBurned?: number;
 }
 
 export interface ISleepLog {
   duration?: number; // in minutes
-  quality?: number; // 1-10 scale
-  notes?: string;
+  quality?: 'poor' | 'fair' | 'good' | 'excellent';
 }
 
 export interface ILog extends Document {
@@ -28,6 +28,7 @@ export interface ILog extends Document {
   type: LogType;
   metrics: IMealLog | IWorkoutLog | ISleepLog;
   date: Date;
+  notes?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -52,6 +53,10 @@ const logSchema = new Schema<ILog>(
       type: Date,
       required: true,
       default: () => new Date(),
+    },
+    notes: {
+      type: String,
+      required: false,
     },
   },
   {

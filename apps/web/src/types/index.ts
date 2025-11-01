@@ -8,26 +8,24 @@ export interface User {
 }
 
 export interface MealLog {
-  type: 'meal';
-  name: string;
-  calories: number;
-  protein: number;
-  carbs: number;
-  fat: number;
+  name?: string;
+  calories?: number;
+  protein?: number;
+  carbs?: number;
+  fat?: number;
 }
 
 export interface WorkoutLog {
-  type: 'workout';
-  name: string;
-  duration: number;
-  intensity: 'low' | 'moderate' | 'high';
-  caloriesBurned: number;
+  name?: string;
+  duration?: number;
+  type?: 'cardio' | 'strength' | 'flexibility';
+  intensity?: 'low' | 'moderate' | 'high';
+  caloriesBurned?: number;
 }
 
 export interface SleepLog {
-  type: 'sleep';
-  duration: number;
-  quality: 'poor' | 'fair' | 'good' | 'excellent';
+  duration?: number;
+  quality?: 'poor' | 'fair' | 'good' | 'excellent';
 }
 
 export type LogMetrics = MealLog | WorkoutLog | SleepLog;
@@ -35,6 +33,7 @@ export type LogMetrics = MealLog | WorkoutLog | SleepLog;
 export interface Log {
   id: string;
   userId: string;
+  type: 'meal' | 'workout' | 'sleep';
   date: string;
   metrics: LogMetrics;
   notes?: string;
