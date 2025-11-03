@@ -22,21 +22,35 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
 
-    // Check email verification on mount
+    // Check authentication and email verification on mount
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _checkEmailVerification();
-      _loadInitialData();
+      _checkAuthentication();
     });
   }
 
-  void _checkEmailVerification() {
+  void _checkAuthentication() {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    
+    // If not authenticated, redirect to login
+    if (!authProvider.isAuthenticated) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const LoginScreen()),
+      );
+      return;
+    }
+
+    // If authenticated but email not verified, redirect to verify email screen
     if (authProvider.user?.emailVerified != true) {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => const VerifyEmailScreen()),
       );
+      return;
     }
+
+    // If authenticated and verified, load initial data
+    _loadInitialData();
   }
 
   void _loadInitialData() {

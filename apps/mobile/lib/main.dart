@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import 'theme/app_theme.dart';
 import 'providers/auth_provider.dart';
 import 'providers/health_log_provider.dart';
-import 'screens/login_screen.dart';
+import 'screens/home_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -23,7 +23,7 @@ class MyApp extends StatelessWidget {
         title: 'Nibble',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.lightTheme,
-        home: const LoginScreen(),
+        home: const HomeScreen(),
       ),
     );
   }
