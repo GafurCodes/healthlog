@@ -124,24 +124,26 @@ export const DashboardPage: React.FC = () => {
     return acc;
   }, {});
 
-  const calorieChartData = Object.entries(caloriesByDay).map(
-    ([date, calories]) => ({
+  const calorieChartData = Object.keys(caloriesByDay)
+    .sort((a, b) => new Date(a).getTime() - new Date(b).getTime())
+    .map((date) => ({
       date: format(new Date(date), 'MMM dd'),
-      calories,
-    })
-  );
+      calories: caloriesByDay[date],
+    }));
 
-  const workoutChartData = Object.entries(workoutDurationByDay).map(
-    ([date, duration]) => ({
+  const workoutChartData = Object.keys(workoutDurationByDay)
+    .sort((a, b) => new Date(a).getTime() - new Date(b).getTime())
+    .map((date) => ({
       date: format(new Date(date), 'MMM dd'),
-      duration,
-    })
-  );
+      duration: workoutDurationByDay[date],
+    }));
 
-  const sleepChartData = Object.entries(sleepByDay).map(([date, hours]) => ({
-    date: format(new Date(date), 'MMM dd'),
-    hours,
-  }));
+  const sleepChartData = Object.keys(sleepByDay)
+    .sort((a, b) => new Date(a).getTime() - new Date(b).getTime())
+    .map((date) => ({
+      date: format(new Date(date), 'MMM dd'),
+      hours: sleepByDay[date],
+    }));
 
   return (
     <div className={styles.container}>
