@@ -9,6 +9,16 @@ export interface LogsQuery {
   pageSize?: number;
 }
 
+function isDateOnly(s?: string) {
+  return typeof s === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s);
+}
+function toStartOfDayISO(dateOnly: string) {
+  return new Date(dateOnly + 'T00:00:00.000Z').toISOString();
+}
+function toEndOfDayISO(dateOnly: string) {
+  return new Date(dateOnly + 'T23:59:59.999Z').toISOString();
+}
+
 function normalizeListResponse(payload: any, query?: LogsQuery): LogsResponse {
   const data: Log[] = Array.isArray(payload?.data)
     ? payload.data
@@ -32,8 +42,14 @@ function emptyListResponse(query?: LogsQuery): LogsResponse {
 
 export const logsApi = {
   list: async (query?: LogsQuery) => {
+    const params: any = { ...(query || {}) };
+    if (isDateOnly(params.startDate))
+      params.startDate = toStartOfDayISO(params.startDate);
+    if (isDateOnly(params.endDate))
+      params.endDate = toEndOfDayISO(params.endDate);
+
     try {
-      const res = await apiClient.get<any>('/logs', { params: query });
+      const res = await apiClient.get<any>('/logs', { params });
       const body = normalizeListResponse(res.data, query);
       return { ...res, data: body } as typeof res & { data: LogsResponse };
     } catch {
@@ -52,10 +68,11 @@ export const logsApi = {
 
   create: async (metrics: LogMetrics, date: string, notes?: string) => {
     const { type, ...metricsWithoutType } = metrics as any;
+    const isoDate = isDateOnly(date) ? toStartOfDayISO(date) : date;
     const res = await apiClient.post<{ data?: Log } | Log>('/logs', {
       type,
       metrics: metricsWithoutType,
-      date,
+      date: isoDate,
       notes,
     });
     const log: Log = (res.data as any)?.data ?? (res.data as any);
@@ -71,10 +88,11 @@ export const logsApi = {
     notes?: string
   ) => {
     const { type, ...metricsWithoutType } = metrics as any;
+    const isoDate = isDateOnly(date) ? toStartOfDayISO(date) : date;
     const res = await apiClient.put<{ data?: Log } | Log>(`/logs/${id}`, {
       type,
       metrics: metricsWithoutType,
-      date,
+      date: isoDate,
       notes,
     });
     const log: Log = (res.data as any)?.data ?? (res.data as any);

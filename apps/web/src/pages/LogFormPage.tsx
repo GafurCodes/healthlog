@@ -62,7 +62,6 @@ export const LogFormPage: React.FC = () => {
         setLoading(true);
         const res = await logsApi.get(id);
         const log: Log | undefined = res?.data?.data as any;
-
         if (!log || !log.id) {
           setError('Log not found');
           return;
