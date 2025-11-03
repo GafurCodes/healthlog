@@ -13,16 +13,16 @@ class VerifyEmailScreen extends StatefulWidget {
 
 class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _tokenController = TextEditingController();
+  final _emailController = TextEditingController();
   bool _showSuccess = false;
 
   @override
   void dispose() {
-    _tokenController.dispose();
+    _emailController.dispose();
     super.dispose();
   }
 
-  Future<void> _handleVerify() async {
+  Future<void> _handleResendEmail() async {
     if (!_formKey.currentState!.validate()) {
       return;
     }
@@ -30,8 +30,8 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
     try {
-      await authProvider.verifyEmail(
-        token: _tokenController.text.trim(),
+      await authProvider.resendVerificationEmail(
+        email: _emailController.text.trim(),
       );
 
       if (mounted) {
@@ -43,7 +43,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(authProvider.error ?? 'Verification failed'),
+            content: Text(authProvider.error ?? 'Failed to send verification email'),
             backgroundColor: AppTheme.danger,
           ),
         );
@@ -65,13 +65,13 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   const Icon(
-                    Icons.check_circle,
+                    Icons.mark_email_read,
                     color: Colors.green,
                     size: 64,
                   ),
                   const SizedBox(height: 24),
                   const Text(
-                    'Email Verified!',
+                    'Verification Email Sent!',
                     style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
@@ -80,7 +80,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
                   ),
                   const SizedBox(height: 16),
                   const Text(
-                    'Your email has been successfully verified.',
+                    'Please check your email inbox and click the verification link to verify your account.',
                     style: TextStyle(
                       fontSize: 16,
                       color: AppTheme.textLight,
@@ -99,6 +99,18 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
                     },
                     child: const Text('Go to Login'),
                   ),
+                  const SizedBox(height: 16),
+                  TextButton(
+                    onPressed: () {
+                      setState(() {
+                        _showSuccess = false;
+                      });
+                    },
+                    child: const Text(
+                      'Resend Email',
+                      style: TextStyle(fontSize: 14),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -109,7 +121,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Verify Email'),
+        title: const Text('Resend Verification Email'),
       ),
       body: SafeArea(
         child: Center(
@@ -122,13 +134,13 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   const Icon(
-                    Icons.email,
+                    Icons.email_outlined,
                     size: 64,
                     color: AppTheme.primary,
                   ),
                   const SizedBox(height: 24),
                   const Text(
-                    'Verify Your Email',
+                    'Resend Verification Email',
                     style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
@@ -138,7 +150,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
                   ),
                   const SizedBox(height: 8),
                   const Text(
-                    'Enter the verification token sent to your email',
+                    'Enter your email address and we\'ll send you a new verification link.',
                     style: TextStyle(
                       fontSize: 16,
                       color: AppTheme.textLight,
@@ -147,22 +159,26 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
                   ),
                   const SizedBox(height: 32),
                   TextFormField(
-                    controller: _tokenController,
+                    controller: _emailController,
+                    keyboardType: TextInputType.emailAddress,
                     decoration: const InputDecoration(
-                      labelText: 'Verification Token',
-                      prefixIcon: Icon(Icons.key),
-                      hintText: 'Enter token from email',
+                      labelText: 'Email',
+                      prefixIcon: Icon(Icons.email),
+                      hintText: 'Enter your email address',
                     ),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
-                        return 'Please enter the verification token';
+                        return 'Please enter your email';
+                      }
+                      if (!value.contains('@')) {
+                        return 'Please enter a valid email';
                       }
                       return null;
                     },
                   ),
                   const SizedBox(height: 24),
                   ElevatedButton(
-                    onPressed: authProvider.isLoading ? null : _handleVerify,
+                    onPressed: authProvider.isLoading ? null : _handleResendEmail,
                     child: authProvider.isLoading
                         ? const SizedBox(
                             height: 20,
@@ -173,7 +189,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
                                   AlwaysStoppedAnimation<Color>(Colors.white),
                             ),
                           )
-                        : const Text('Verify Email'),
+                        : const Text('Send Verification Email'),
                   ),
                   const SizedBox(height: 16),
                   TextButton(
@@ -199,4 +215,3 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
     );
   }
 }
-

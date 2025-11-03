@@ -4,6 +4,7 @@ import {
   registerSchema,
   loginSchema,
   verifyEmailSchema,
+  resendVerificationEmailSchema,
   forgotPasswordSchema,
   resetPasswordSchema,
   refreshTokenSchema,
@@ -37,6 +38,20 @@ export async function verifyEmail(req: Request, res: Response, next: NextFunctio
   try {
     const { token } = verifyEmailSchema.parse(req.body);
     const result = await authService.verifyEmail(token);
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function resendVerificationEmail(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const data = resendVerificationEmailSchema.parse(req.body);
+    const result = await authService.resendVerificationEmail(data);
     res.status(200).json(result);
   } catch (error) {
     next(error);

@@ -85,6 +85,24 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
+  Future<void> resendVerificationEmail({
+    required String email,
+  }) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      await ApiService.resendVerificationEmail(email: email);
+    } catch (e) {
+      _error = e.toString();
+      rethrow;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
   Future<void> logout() async {
     await ApiService.clearTokens();
     _user = null;

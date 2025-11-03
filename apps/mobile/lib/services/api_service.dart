@@ -143,6 +143,26 @@ class ApiService {
       );
     }
   }
+
+  static Future<Map<String, dynamic>> resendVerificationEmail({
+    required String email,
+  }) async {
+    final response = await _request(
+      'POST',
+      '/auth/resend-verification-email',
+      body: {'email': email},
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      final error = jsonDecode(response.body);
+      throw ApiException(
+        message: error['message'] ?? 'Failed to resend verification email',
+        statusCode: response.statusCode,
+      );
+    }
+  }
 }
 
 class ApiException implements Exception {

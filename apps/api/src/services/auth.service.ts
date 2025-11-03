@@ -9,6 +9,7 @@ import {
   LoginInput,
   ForgotPasswordInput,
   ResetPasswordInput,
+  ResendVerificationEmailInput,
 } from '../utils/validation.js';
 
 export interface AuthResponse {
@@ -107,6 +108,39 @@ export async function verifyEmail(token: string): Promise<{ message: string }> {
   await user.save();
 
   return { message: 'Email verified successfully. You can now log in.' };
+}
+
+export async function resendVerificationEmail(
+  data: ResendVerificationEmailInput
+): Promise<{ message: string }> {
+  const { email } = data;
+
+  const user = await User.findOne({ email });
+  if (!user) {
+    // Don't reveal if user exists
+    return {
+      message: 'If an account exists with this email, a verification link has been sent.',
+    };
+  }
+
+  // If already verified, don't send another email
+  if (user.emailVerified) {
+    return { message: 'This email is already verified.' };
+  }
+
+  // Generate new verification token
+  const verificationToken = generateToken();
+  const hashedVerificationToken = hashToken(verificationToken);
+
+  user.emailVerificationToken = hashedVerificationToken;
+  user.emailVerificationTokenExpiresAt = getTokenExpirationDate(24); // 24 hours
+  await user.save();
+
+  await sendVerificationEmail(user.email, user.name, verificationToken);
+
+  return {
+    message: 'If an account exists with this email, a verification link has been sent.',
+  };
 }
 
 export async function forgotPassword(data: ForgotPasswordInput): Promise<{ message: string }> {

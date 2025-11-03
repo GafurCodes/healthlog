@@ -10,6 +10,8 @@ router.post('/login', authLimiter, authController.login);
 
 router.post('/verify-email', emailLimiter, authController.verifyEmail);
 
+router.post('/resend-verification-email', emailLimiter, authController.resendVerificationEmail);
+
 router.post('/forgot-password', emailLimiter, authController.forgotPassword);
 
 router.post('/reset-password', authLimiter, authController.resetPassword);
