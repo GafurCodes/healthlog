@@ -22,13 +22,22 @@ export function createApp(): express.Application {
       origin: corsOrigins.length === 1 && corsOrigins[0] === '*' 
         ? '*' 
         : (origin, callback) => {
-            if (!origin || corsOrigins.includes(origin)) {
+            // Allow requests with no origin (mobile apps, Postman, etc.)
+            if (!origin) {
               callback(null, true);
-            } else {
-              callback(new Error('Not allowed by CORS'));
+              return;
             }
+            // Allow requests from whitelisted origins
+            if (corsOrigins.includes(origin)) {
+              callback(null, true);
+              return;
+            }
+            // Reject all other origins
+            callback(new Error('Not allowed by CORS'));
           },
       credentials: true,
+      methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+      allowedHeaders: ['Content-Type', 'Authorization'],
     })
   );
 
