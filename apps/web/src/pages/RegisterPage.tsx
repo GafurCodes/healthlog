@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
-import { Button } from '../components/Button';
-import { Input } from '../components/Input';
-import { Card, CardBody, CardHeader } from '../components/Card';
-import styles from '../styles/components.module.css';
+import React, { useEffect, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { handleApiError } from '../api/client';
+import { Button } from '../components/Button';
+import { Card, CardBody, CardHeader } from '../components/Card';
+import { Input } from '../components/Input';
+import { useAuth } from '../contexts/AuthContext';
+import styles from '../styles/components.module.css';
 
 export const RegisterPage: React.FC = () => {
   const [name, setName] = useState('');
@@ -38,6 +38,11 @@ export const RegisterPage: React.FC = () => {
 
     if (password.length < 8) {
       setError('Password must be at least 8 characters');
+      return;
+    }
+
+    if (!/\d/.test(password)) {
+      setError('Password must contain at least one number');
       return;
     }
 
