@@ -219,6 +219,7 @@ export const DashboardPage: React.FC = () => {
                   display: 'grid',
                   gridTemplateColumns: '1fr 1fr 1fr',
                   gap: '1rem',
+                  alignItems: 'end',
                 }}
               >
                 <Input
@@ -235,16 +236,13 @@ export const DashboardPage: React.FC = () => {
                   onChange={(e) => setEndDate(e.target.value)}
                   min={startDate || undefined}
                 />
-                <div style={{ display: 'flex', alignItems: 'flex-end' }}>
-                  <Button
-                    fullWidth
-                    onClick={loadLogs}
-                    style={{ marginBottom: 0 }}
-                    disabled={!isRangeValid}
-                  >
-                    Refresh
-                  </Button>
-                </div>
+                <Button
+                  fullWidth
+                  onClick={loadLogs}
+                  disabled={!isRangeValid}
+                >
+                  Refresh
+                </Button>
               </div>
               {!isRangeValid && (
                 <p
