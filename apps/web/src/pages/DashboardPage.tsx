@@ -163,7 +163,7 @@ export const DashboardPage: React.FC = () => {
         >
           <Card>
             <CardBody>
-              <h3 style={{ marginTop: 0 }}>Total Meals hi hi</h3>
+              <h3 style={{ marginTop: 0 }}>Total Meals</h3>
               <p style={{ fontSize: '2rem', margin: '0.5rem 0' }}>
                 {mealLogs.length}
               </p>
