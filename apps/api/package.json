@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "nodemon --exec ts-node src/server.ts",
+    "dev": "nodemon --watch src --ext ts,tsx,json --exec \"node --loader ts-node/esm --enable-source-maps src/server.ts\"",
     "build": "tsc",
     "start": "node dist/server.js",
     "test": "jest --runInBand",
@@ -28,7 +28,7 @@
     "@types/express": "^5.0.5",
     "@types/jest": "^30.0.0",
     "@types/jsonwebtoken": "^9.0.10",
-    "@types/node": "^24.9.2",
+    "@types/node": "^24.10.0",
     "@types/nodemailer": "^7.0.3",
     "@types/supertest": "^6.0.3",
     "jest": "^30.2.0",

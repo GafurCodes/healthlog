@@ -4,7 +4,7 @@ import { AuthProvider } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { Header } from './components/Header';
-import { Footer } from './components/Footer';
+// import { Footer } from './components/Footer';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { HomePage } from './pages/HomePage';
 import { LoginPage } from './pages/LoginPage';
@@ -24,7 +24,7 @@ const App: React.FC = () => {
         <AuthProvider>
           <Router>
             <a
-              href="#main-content"
+              href='#main-content'
               style={{
                 position: 'absolute',
                 left: '-9999px',
@@ -40,56 +40,68 @@ const App: React.FC = () => {
             >
               Skip to main content
             </a>
-            <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                minHeight: '100vh',
+              }}
+            >
               <Header />
-              <main id="main-content" style={{ flex: 1 }}>
-              <Routes>
-                <Route path="/" element={<HomePage />} />
-                <Route path="/login" element={<LoginPage />} />
-                <Route path="/register" element={<RegisterPage />} />
-                <Route path="/verify-email" element={<VerifyEmailPage />} />
-                <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-                <Route path="/reset-password" element={<ResetPasswordPage />} />
-                <Route
-                  path="/dashboard"
-                  element={
-                    <ProtectedRoute>
-                      <DashboardPage />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/logs"
-                  element={
-                    <ProtectedRoute>
-                      <LogsPage />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/logs/new"
-                  element={
-                    <ProtectedRoute>
-                      <LogFormPage />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/logs/:id/edit"
-                  element={
-                    <ProtectedRoute>
-                      <LogFormPage />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route path="*" element={<NotFoundPage />} />
-              </Routes>
-            </main>
-            <Footer />
-          </div>
-        </Router>
-      </AuthProvider>
-    </ThemeProvider>
+              <main id='main-content' style={{ flex: 1 }}>
+                <Routes>
+                  <Route path='/' element={<HomePage />} />
+                  <Route path='/login' element={<LoginPage />} />
+                  <Route path='/register' element={<RegisterPage />} />
+                  <Route path='/verify-email' element={<VerifyEmailPage />} />
+                  <Route
+                    path='/forgot-password'
+                    element={<ForgotPasswordPage />}
+                  />
+                  <Route
+                    path='/reset-password'
+                    element={<ResetPasswordPage />}
+                  />
+                  <Route
+                    path='/dashboard'
+                    element={
+                      <ProtectedRoute>
+                        <DashboardPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path='/logs'
+                    element={
+                      <ProtectedRoute>
+                        <LogsPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path='/logs/new'
+                    element={
+                      <ProtectedRoute>
+                        <LogFormPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path='/logs/:id/edit'
+                    element={
+                      <ProtectedRoute>
+                        <LogFormPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route path='*' element={<NotFoundPage />} />
+                </Routes>
+              </main>
+              {/* <Footer /> */}
+            </div>
+          </Router>
+        </AuthProvider>
+      </ThemeProvider>
     </ErrorBoundary>
   );
 };

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { logsApi } from '../api/logs';
-import type { LogMetrics } from '../types';
+import type { Log, LogMetrics } from '../types';
 import { Button } from '../components/Button';
 import { Card, CardBody, CardHeader } from '../components/Card';
 import { Input, TextArea, Select } from '../components/Input';
@@ -15,100 +15,140 @@ interface FormData {
   type: LogType;
   date: string;
   notes: string;
-  meal?: { name: string; calories: string; protein: string; carbs: string; fat: string };
-  workout?: { name: string; duration: string; workoutType: 'cardio' | 'strength' | 'flexibility'; intensity: 'low' | 'moderate' | 'high'; caloriesBurned: string };
-  sleep?: { duration: string; quality: 'poor' | 'fair' | 'good' | 'excellent' };
+  meal: {
+    name: string;
+    calories: string;
+    protein: string;
+    carbs: string;
+    fat: string;
+  };
+  workout: {
+    name: string;
+    duration: string;
+    workoutType: 'cardio' | 'strength' | 'flexibility';
+    intensity: 'low' | 'moderate' | 'high';
+    caloriesBurned: string;
+  };
+  sleep: { duration: string; quality: 'poor' | 'fair' | 'good' | 'excellent' };
 }
 
 export const LogFormPage: React.FC = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(!!id);
+
+  const [loading, setLoading] = useState<boolean>(!!id);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+
   const [form, setForm] = useState<FormData>({
     type: 'meal',
     date: format(new Date(), 'yyyy-MM-dd'),
     notes: '',
     meal: { name: '', calories: '', protein: '', carbs: '', fat: '' },
-    workout: { name: '', duration: '', workoutType: 'cardio', intensity: 'moderate', caloriesBurned: '' },
+    workout: {
+      name: '',
+      duration: '',
+      workoutType: 'cardio',
+      intensity: 'moderate',
+      caloriesBurned: '',
+    },
     sleep: { duration: '', quality: 'good' },
   });
 
   useEffect(() => {
-    if (id) {
-      logsApi
-        .get(id)
-        .then((res) => {
-          const log = res.data.data;
-          const newForm: FormData = {
-            type: log.type,
-            date: log.date.split('T')[0],
-            notes: log.notes || '',
+    if (!id) return;
+    (async () => {
+      try {
+        setLoading(true);
+        const res = await logsApi.get(id);
+        const log: Log | undefined = res?.data?.data as any;
+
+        if (!log || !log.id) {
+          setError('Log not found');
+          return;
+        }
+
+        const next: FormData = {
+          type: log.type as LogType,
+          date: (log.date || log.createdAt || new Date().toISOString()).slice(
+            0,
+            10
+          ),
+          notes: log.notes || '',
+          meal: { name: '', calories: '', protein: '', carbs: '', fat: '' },
+          workout: {
+            name: '',
+            duration: '',
+            workoutType: 'cardio',
+            intensity: 'moderate',
+            caloriesBurned: '',
+          },
+          sleep: { duration: '', quality: 'good' },
+        };
+
+        if (log.type === 'meal') {
+          const m = (log as any).metrics || {};
+          next.meal = {
+            name: String(m.name ?? ''),
+            calories: toForm(m.calories),
+            protein: toForm(m.protein),
+            carbs: toForm(m.carbs),
+            fat: toForm(m.fat),
           };
+        } else if (log.type === 'workout') {
+          const m = (log as any).metrics || {};
+          next.workout = {
+            name: String(m.name ?? ''),
+            duration: toForm(m.duration),
+            workoutType: (m.workoutType as any) ?? 'cardio',
+            intensity: (m.intensity as any) ?? 'moderate',
+            caloriesBurned: toForm(m.caloriesBurned),
+          };
+        } else if (log.type === 'sleep') {
+          const m = (log as any).metrics || {};
+          next.sleep = {
+            duration: toForm(m.duration),
+            quality: (m.quality as any) ?? 'good',
+          };
+        }
 
-          if (log.type === 'meal') {
-            const metrics = log.metrics as Omit<import('../types').MealLog, 'type'>;
-            newForm.meal = {
-              name: metrics.name || '',
-              calories: String(metrics.calories || ''),
-              protein: String(metrics.protein || ''),
-              carbs: String(metrics.carbs || ''),
-              fat: String(metrics.fat || ''),
-            };
-          } else if (log.type === 'workout') {
-            const metrics = log.metrics as Omit<import('../types').WorkoutLog, 'type'>;
-            newForm.workout = {
-              name: metrics.name || '',
-              duration: String(metrics.duration || ''),
-              workoutType: metrics.workoutType || 'cardio',
-              intensity: metrics.intensity || 'moderate',
-              caloriesBurned: String(metrics.caloriesBurned || 0),
-            };
-          } else if (log.type === 'sleep') {
-            const metrics = log.metrics as Omit<import('../types').SleepLog, 'type'>;
-            newForm.sleep = {
-              duration: String(metrics.duration || ''),
-              quality: metrics.quality || 'good',
-            };
-          }
-
-          setForm(newForm);
-        })
-        .catch((err) => {
-          const apiError = handleApiError(err);
-          setError(apiError.message);
-        })
-        .finally(() => setLoading(false));
-    }
+        setForm(next);
+      } catch (err) {
+        const apiError = handleApiError(err);
+        setError(apiError.message || 'Failed to load log');
+      } finally {
+        setLoading(false);
+      }
+    })();
   }, [id]);
 
   const buildMetrics = (): LogMetrics | null => {
-    const { type } = form;
-    if (type === 'meal' && form.meal) {
+    if (form.type === 'meal') {
       return {
         type: 'meal',
-        name: form.meal.name,
-        calories: Number(form.meal.calories),
-        protein: Number(form.meal.protein) || undefined,
-        carbs: Number(form.meal.carbs) || undefined,
-        fat: Number(form.meal.fat) || undefined,
-      };
-    } else if (type === 'workout' && form.workout) {
+        name: blankToUndef(form.meal.name),
+        calories: toNum(form.meal.calories),
+        protein: toNum(form.meal.protein),
+        carbs: toNum(form.meal.carbs),
+        fat: toNum(form.meal.fat),
+      } as any;
+    }
+    if (form.type === 'workout') {
       return {
         type: 'workout',
-        name: form.workout.name,
-        duration: Number(form.workout.duration),
+        name: blankToUndef(form.workout.name),
+        duration: toNum(form.workout.duration),
         workoutType: form.workout.workoutType,
         intensity: form.workout.intensity,
-        caloriesBurned: Number(form.workout.caloriesBurned) || undefined,
-      };
-    } else if (type === 'sleep' && form.sleep) {
+        caloriesBurned: toNum(form.workout.caloriesBurned),
+      } as any;
+    }
+    if (form.type === 'sleep') {
       return {
         type: 'sleep',
-        duration: Number(form.sleep.duration),
+        duration: toNum(form.sleep.duration),
         quality: form.sleep.quality,
-      };
+      } as any;
     }
     return null;
   };
@@ -121,18 +161,18 @@ export const LogFormPage: React.FC = () => {
       setError('Please fill in all required fields');
       return;
     }
-
     setSaving(true);
     try {
+      const dateIso = new Date(form.date + 'T00:00:00.000Z').toISOString();
       if (id) {
-        await logsApi.update(id, metrics, form.date, form.notes || undefined);
+        await logsApi.update(id, metrics, dateIso, blankToUndef(form.notes));
       } else {
-        await logsApi.create(metrics, form.date, form.notes || undefined);
+        await logsApi.create(metrics, dateIso, blankToUndef(form.notes));
       }
       navigate('/logs');
     } catch (err) {
       const apiError = handleApiError(err);
-      setError(apiError.message);
+      setError(apiError.message || 'Unexpected error');
     } finally {
       setSaving(false);
     }
@@ -159,12 +199,14 @@ export const LogFormPage: React.FC = () => {
 
           <form onSubmit={handleSubmit}>
             <Select
-              label="Type"
+              label='Type'
               value={form.type}
-              onChange={(e) => {
-                const newType = e.target.value as LogType;
-                setForm({ ...form, type: newType });
-              }}
+              onChange={(e) =>
+                setForm((prev) => ({
+                  ...prev,
+                  type: e.target.value as LogType,
+                }))
+              }
               options={[
                 { value: 'meal', label: 'Meal' },
                 { value: 'workout', label: 'Workout' },
@@ -173,77 +215,117 @@ export const LogFormPage: React.FC = () => {
             />
 
             <Input
-              label="Date"
-              type="date"
+              label='Date'
+              type='date'
               value={form.date}
-              onChange={(e) => setForm({ ...form, date: e.target.value })}
+              onChange={(e) =>
+                setForm((prev) => ({ ...prev, date: e.target.value }))
+              }
               required
             />
 
-            {form.type === 'meal' && form.meal && (
+            {form.type === 'meal' && (
               <>
                 <Input
-                  label="Food Name"
-                  type="text"
+                  label='Food Name'
+                  type='text'
                   value={form.meal.name}
-                  onChange={(e) => setForm({ ...form, meal: { ...form.meal!, name: e.target.value } })}
+                  onChange={(e) =>
+                    setForm((p) => ({
+                      ...p,
+                      meal: { ...p.meal, name: e.target.value },
+                    }))
+                  }
                   required
                 />
                 <Input
-                  label="Calories"
-                  type="number"
+                  label='Calories'
+                  type='number'
                   value={form.meal.calories}
-                  onChange={(e) => setForm({ ...form, meal: { ...form.meal!, calories: e.target.value } })}
+                  onChange={(e) =>
+                    setForm((p) => ({
+                      ...p,
+                      meal: { ...p.meal, calories: e.target.value },
+                    }))
+                  }
                   required
                 />
                 <Input
-                  label="Protein (g)"
-                  type="number"
+                  label='Protein (g)'
+                  type='number'
                   value={form.meal.protein}
-                  onChange={(e) => setForm({ ...form, meal: { ...form.meal!, protein: e.target.value } })}
-                  required
+                  onChange={(e) =>
+                    setForm((p) => ({
+                      ...p,
+                      meal: { ...p.meal, protein: e.target.value },
+                    }))
+                  }
                 />
                 <Input
-                  label="Carbs (g)"
-                  type="number"
+                  label='Carbs (g)'
+                  type='number'
                   value={form.meal.carbs}
-                  onChange={(e) => setForm({ ...form, meal: { ...form.meal!, carbs: e.target.value } })}
-                  required
+                  onChange={(e) =>
+                    setForm((p) => ({
+                      ...p,
+                      meal: { ...p.meal, carbs: e.target.value },
+                    }))
+                  }
                 />
                 <Input
-                  label="Fat (g)"
-                  type="number"
+                  label='Fat (g)'
+                  type='number'
                   value={form.meal.fat}
-                  onChange={(e) => setForm({ ...form, meal: { ...form.meal!, fat: e.target.value } })}
-                  required
+                  onChange={(e) =>
+                    setForm((p) => ({
+                      ...p,
+                      meal: { ...p.meal, fat: e.target.value },
+                    }))
+                  }
                 />
               </>
             )}
 
-            {form.type === 'workout' && form.workout && (
+            {form.type === 'workout' && (
               <>
                 <Input
-                  label="Exercise Name"
-                  type="text"
+                  label='Exercise Name'
+                  type='text'
                   value={form.workout.name}
-                  onChange={(e) => setForm({ ...form, workout: { ...form.workout!, name: e.target.value } })}
+                  onChange={(e) =>
+                    setForm((p) => ({
+                      ...p,
+                      workout: { ...p.workout, name: e.target.value },
+                    }))
+                  }
                   required
                 />
                 <Input
-                  label="Duration (minutes)"
-                  type="number"
+                  label='Duration (minutes)'
+                  type='number'
                   value={form.workout.duration}
-                  onChange={(e) => setForm({ ...form, workout: { ...form.workout!, duration: e.target.value } })}
+                  onChange={(e) =>
+                    setForm((p) => ({
+                      ...p,
+                      workout: { ...p.workout, duration: e.target.value },
+                    }))
+                  }
                   required
                 />
                 <Select
-                  label="Workout Type"
+                  label='Workout Type'
                   value={form.workout.workoutType}
                   onChange={(e) =>
-                    setForm({
-                      ...form,
-                      workout: { ...form.workout!, workoutType: e.target.value as 'cardio' | 'strength' | 'flexibility' },
-                    })
+                    setForm((p) => ({
+                      ...p,
+                      workout: {
+                        ...p.workout,
+                        workoutType: e.target.value as
+                          | 'cardio'
+                          | 'strength'
+                          | 'flexibility',
+                      },
+                    }))
                   }
                   options={[
                     { value: 'cardio', label: 'Cardio' },
@@ -252,13 +334,19 @@ export const LogFormPage: React.FC = () => {
                   ]}
                 />
                 <Select
-                  label="Intensity"
+                  label='Intensity'
                   value={form.workout.intensity}
                   onChange={(e) =>
-                    setForm({
-                      ...form,
-                      workout: { ...form.workout!, intensity: e.target.value as 'low' | 'moderate' | 'high' },
-                    })
+                    setForm((p) => ({
+                      ...p,
+                      workout: {
+                        ...p.workout,
+                        intensity: e.target.value as
+                          | 'low'
+                          | 'moderate'
+                          | 'high',
+                      },
+                    }))
                   }
                   options={[
                     { value: 'low', label: 'Low' },
@@ -267,33 +355,49 @@ export const LogFormPage: React.FC = () => {
                   ]}
                 />
                 <Input
-                  label="Calories Burned"
-                  type="number"
+                  label='Calories Burned'
+                  type='number'
                   value={form.workout.caloriesBurned}
-                  onChange={(e) => setForm({ ...form, workout: { ...form.workout!, caloriesBurned: e.target.value } })}
-                  required
+                  onChange={(e) =>
+                    setForm((p) => ({
+                      ...p,
+                      workout: { ...p.workout, caloriesBurned: e.target.value },
+                    }))
+                  }
                 />
               </>
             )}
 
-            {form.type === 'sleep' && form.sleep && (
+            {form.type === 'sleep' && (
               <>
                 <Input
-                  label="Duration (hours)"
-                  type="number"
-                  step="0.5"
+                  label='Duration (hours)'
+                  type='number'
+                  step='0.5'
                   value={form.sleep.duration}
-                  onChange={(e) => setForm({ ...form, sleep: { ...form.sleep!, duration: e.target.value } })}
+                  onChange={(e) =>
+                    setForm((p) => ({
+                      ...p,
+                      sleep: { ...p.sleep, duration: e.target.value },
+                    }))
+                  }
                   required
                 />
                 <Select
-                  label="Quality"
+                  label='Quality'
                   value={form.sleep.quality}
                   onChange={(e) =>
-                    setForm({
-                      ...form,
-                      sleep: { ...form.sleep!, quality: e.target.value as 'poor' | 'fair' | 'good' | 'excellent' },
-                    })
+                    setForm((p) => ({
+                      ...p,
+                      sleep: {
+                        ...p.sleep,
+                        quality: e.target.value as
+                          | 'poor'
+                          | 'fair'
+                          | 'good'
+                          | 'excellent',
+                      },
+                    }))
                   }
                   options={[
                     { value: 'poor', label: 'Poor' },
@@ -306,17 +410,19 @@ export const LogFormPage: React.FC = () => {
             )}
 
             <TextArea
-              label="Notes (optional)"
+              label='Notes (optional)'
               value={form.notes}
-              onChange={(e) => setForm({ ...form, notes: e.target.value })}
+              onChange={(e) =>
+                setForm((p) => ({ ...p, notes: e.target.value }))
+              }
               rows={4}
             />
 
             <div className={styles['form-actions']}>
-              <Button variant="secondary" onClick={() => navigate('/logs')}>
+              <Button variant='secondary' onClick={() => navigate('/logs')}>
                 Cancel
               </Button>
-              <Button loading={saving} type="submit">
+              <Button loading={saving} type='submit'>
                 {id ? 'Update' : 'Create'} Log
               </Button>
             </div>
@@ -326,3 +432,20 @@ export const LogFormPage: React.FC = () => {
     </div>
   );
 };
+
+function toForm(v: any): string {
+  if (v === null || v === undefined) return '';
+  const n = Number(v);
+  return Number.isFinite(n) ? String(n) : '';
+}
+
+function toNum(v: string): number | undefined {
+  if (v === null || v === undefined || v === '') return undefined;
+  const n = parseFloat(v);
+  return Number.isFinite(n) ? n : undefined;
+}
+
+function blankToUndef<T extends string | undefined>(v: T): T | undefined {
+  if (v === '' || v === undefined) return undefined;
+  return v;
+}
