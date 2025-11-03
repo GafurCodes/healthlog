@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import '../providers/health_log_provider.dart';
 import '../theme/app_theme.dart';
 
+enum LogType { meal, workout }
+
 class LoggingTab extends StatefulWidget {
   const LoggingTab({super.key});
 
@@ -12,14 +14,35 @@ class LoggingTab extends StatefulWidget {
 
 class _LoggingTabState extends State<LoggingTab> {
   final _formKey = GlobalKey<FormState>();
+  LogType _selectedLogType = LogType.meal;
   final _caloriesController = TextEditingController();
+  final _nameController = TextEditingController();
+  final _carbsController = TextEditingController();
+  final _proteinController = TextEditingController();
+  final _fatController = TextEditingController();
+  final _durationController = TextEditingController();
   final _notesController = TextEditingController();
 
   @override
   void dispose() {
     _caloriesController.dispose();
+    _nameController.dispose();
+    _carbsController.dispose();
+    _proteinController.dispose();
+    _fatController.dispose();
+    _durationController.dispose();
     _notesController.dispose();
     super.dispose();
+  }
+
+  void _clearForm() {
+    _caloriesController.clear();
+    _nameController.clear();
+    _carbsController.clear();
+    _proteinController.clear();
+    _fatController.clear();
+    _durationController.clear();
+    _notesController.clear();
   }
 
   Future<void> _handleSubmit() async {
@@ -30,33 +53,78 @@ class _LoggingTabState extends State<LoggingTab> {
     final logProvider = Provider.of<HealthLogProvider>(context, listen: false);
 
     try {
-      final caloriesBurned = int.parse(_caloriesController.text.trim());
-
-      await logProvider.createWorkoutLog(
-        caloriesBurned: caloriesBurned,
-        notes: _notesController.text.trim().isEmpty
+      if (_selectedLogType == LogType.meal) {
+        final calories = int.parse(_caloriesController.text.trim());
+        final name = _nameController.text.trim().isEmpty
             ? null
-            : _notesController.text.trim(),
-      );
+            : _nameController.text.trim();
+        final carbs = _carbsController.text.trim().isEmpty
+            ? null
+            : int.tryParse(_carbsController.text.trim());
+        final protein = _proteinController.text.trim().isEmpty
+            ? null
+            : int.tryParse(_proteinController.text.trim());
+        final fat = _fatController.text.trim().isEmpty
+            ? null
+            : int.tryParse(_fatController.text.trim());
+        final notes = _notesController.text.trim().isEmpty
+            ? null
+            : _notesController.text.trim();
 
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Workout logged successfully!'),
-            backgroundColor: Colors.green,
-          ),
+        await logProvider.createMealLog(
+          calories: calories,
+          name: name,
+          carbs: carbs,
+          protein: protein,
+          fat: fat,
+          notes: notes,
         );
 
-        // Clear form
-        _caloriesController.clear();
-        _notesController.clear();
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Meal logged successfully!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+          _clearForm();
+        }
+      } else {
+        final caloriesBurned = int.parse(_caloriesController.text.trim());
+        final name = _nameController.text.trim().isEmpty
+            ? null
+            : _nameController.text.trim();
+        final duration = _durationController.text.trim().isEmpty
+            ? null
+            : int.tryParse(_durationController.text.trim());
+        final notes = _notesController.text.trim().isEmpty
+            ? null
+            : _notesController.text.trim();
+
+        await logProvider.createWorkoutLog(
+          caloriesBurned: caloriesBurned,
+          name: name,
+          duration: duration,
+          notes: notes,
+        );
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Workout logged successfully!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+          _clearForm();
+        }
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              logProvider.error ?? 'Failed to log workout',
+              logProvider.error ??
+                  'Failed to log ${_selectedLogType == LogType.meal ? 'meal' : 'workout'}',
             ),
             backgroundColor: AppTheme.danger,
           ),
@@ -76,14 +144,16 @@ class _LoggingTabState extends State<LoggingTab> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Icon(
-              Icons.fitness_center,
+            Icon(
+              _selectedLogType == LogType.meal
+                  ? Icons.restaurant
+                  : Icons.fitness_center,
               size: 64,
               color: AppTheme.primary,
             ),
             const SizedBox(height: 24),
             const Text(
-              'Log Calories Burned',
+              'Log Entry',
               style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
@@ -92,26 +162,75 @@ class _LoggingTabState extends State<LoggingTab> {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
-            const Text(
-              'Enter the calories you burned during your workout',
-              style: TextStyle(
+            Text(
+              _selectedLogType == LogType.meal
+                  ? 'Log your meal and calories consumed'
+                  : 'Log your workout and calories burned',
+              style: const TextStyle(
                 fontSize: 16,
                 color: AppTheme.textLight,
               ),
               textAlign: TextAlign.center,
             ),
+            const SizedBox(height: 24),
+            // Log type selector
+            SegmentedButton<LogType>(
+              segments: const [
+                ButtonSegment<LogType>(
+                  value: LogType.meal,
+                  label: Text('Meal'),
+                  icon: Icon(Icons.restaurant),
+                ),
+                ButtonSegment<LogType>(
+                  value: LogType.workout,
+                  label: Text('Workout'),
+                  icon: Icon(Icons.fitness_center),
+                ),
+              ],
+              selected: {_selectedLogType},
+              onSelectionChanged: (Set<LogType> newSelection) {
+                setState(() {
+                  _selectedLogType = newSelection.first;
+                });
+              },
+            ),
             const SizedBox(height: 32),
+            // Name field (for both types)
+            TextFormField(
+              controller: _nameController,
+              decoration: InputDecoration(
+                labelText: _selectedLogType == LogType.meal
+                    ? 'Meal Name (optional)'
+                    : 'Workout Name (optional)',
+                prefixIcon: const Icon(Icons.label),
+                hintText: _selectedLogType == LogType.meal
+                    ? 'e.g., Breakfast, Lunch'
+                    : 'e.g., Running, Gym Session',
+              ),
+            ),
+            const SizedBox(height: 16),
+            // Calories field (required, different label for each type)
             TextFormField(
               controller: _caloriesController,
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                labelText: 'Calories Burned',
-                prefixIcon: Icon(Icons.local_fire_department),
-                hintText: 'Enter calories burned',
+              decoration: InputDecoration(
+                labelText: _selectedLogType == LogType.meal
+                    ? 'Calories Consumed *'
+                    : 'Calories Burned *',
+                prefixIcon: Icon(
+                  _selectedLogType == LogType.meal
+                      ? Icons.restaurant_menu
+                      : Icons.local_fire_department,
+                ),
+                hintText: _selectedLogType == LogType.meal
+                    ? 'Enter calories consumed'
+                    : 'Enter calories burned',
               ),
               validator: (value) {
                 if (value == null || value.isEmpty) {
-                  return 'Please enter calories burned';
+                  return _selectedLogType == LogType.meal
+                      ? 'Please enter calories consumed'
+                      : 'Please enter calories burned';
                 }
                 final calories = int.tryParse(value);
                 if (calories == null || calories < 0) {
@@ -120,6 +239,91 @@ class _LoggingTabState extends State<LoggingTab> {
                 return null;
               },
             ),
+            // Meal-specific fields
+            if (_selectedLogType == LogType.meal) ...[
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextFormField(
+                      controller: _carbsController,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        labelText: 'Carbs (g)',
+                        prefixIcon: Icon(Icons.circle),
+                      ),
+                      validator: (value) {
+                        if (value != null &&
+                            value.isNotEmpty &&
+                            int.tryParse(value) == null) {
+                          return 'Invalid number';
+                        }
+                        return null;
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: TextFormField(
+                      controller: _proteinController,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        labelText: 'Protein (g)',
+                        prefixIcon: Icon(Icons.circle),
+                      ),
+                      validator: (value) {
+                        if (value != null &&
+                            value.isNotEmpty &&
+                            int.tryParse(value) == null) {
+                          return 'Invalid number';
+                        }
+                        return null;
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: TextFormField(
+                      controller: _fatController,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        labelText: 'Fat (g)',
+                        prefixIcon: Icon(Icons.circle),
+                      ),
+                      validator: (value) {
+                        if (value != null &&
+                            value.isNotEmpty &&
+                            int.tryParse(value) == null) {
+                          return 'Invalid number';
+                        }
+                        return null;
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ],
+            // Workout-specific fields
+            if (_selectedLogType == LogType.workout) ...[
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _durationController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  labelText: 'Duration (minutes)',
+                  prefixIcon: Icon(Icons.timer),
+                  hintText: 'Enter workout duration',
+                ),
+                validator: (value) {
+                  if (value != null &&
+                      value.isNotEmpty &&
+                      int.tryParse(value) == null) {
+                    return 'Invalid number';
+                  }
+                  return null;
+                },
+              ),
+            ],
             const SizedBox(height: 24),
             TextFormField(
               controller: _notesController,
@@ -143,7 +347,11 @@ class _LoggingTabState extends State<LoggingTab> {
                             AlwaysStoppedAnimation<Color>(Colors.white),
                       ),
                     )
-                  : const Text('Log Workout'),
+                  : Text(
+                      _selectedLogType == LogType.meal
+                          ? 'Log Meal'
+                          : 'Log Workout',
+                    ),
             ),
             if (logProvider.error != null) ...[
               const SizedBox(height: 16),

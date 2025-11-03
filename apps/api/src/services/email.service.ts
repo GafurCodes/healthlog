@@ -1,5 +1,5 @@
-import nodemailer from 'nodemailer';
-import { getEnv } from '../config/env.js';
+import nodemailer from "nodemailer";
+import { getEnv } from "../config/env.js";
 
 let transporter: nodemailer.Transporter;
 
@@ -30,9 +30,9 @@ export async function sendVerificationEmail(
     await transporter.sendMail({
       from: env.EMAIL_FROM,
       to,
-      subject: 'Verify your HealthLog account',
+      subject: "Verify your Nibble account",
       html: `
-        <h1>Welcome to HealthLog, ${name}!</h1>
+        <h1>Welcome to Nibble, ${name}!</h1>
         <p>Please verify your email address by clicking the link below:</p>
         <a href="${verificationUrl}">Verify Email</a>
         <p>Or copy this link into your browser:</p>
@@ -45,7 +45,7 @@ export async function sendVerificationEmail(
     console.log(`Verification email sent to ${to}`);
   } catch (error) {
     console.error(`Failed to send verification email to ${to}`, error);
-    throw new Error('Failed to send verification email');
+    throw new Error("Failed to send verification email");
   }
 }
 
@@ -62,7 +62,7 @@ export async function sendPasswordResetEmail(
     await transporter.sendMail({
       from: env.EMAIL_FROM,
       to,
-      subject: 'Reset your HealthLog password',
+      subject: "Reset your Nibble password",
       html: `
         <h1>Password Reset Request</h1>
         <p>Hi ${name},</p>
@@ -78,6 +78,6 @@ export async function sendPasswordResetEmail(
     console.log(`Password reset email sent to ${to}`);
   } catch (error) {
     console.error(`Failed to send password reset email to ${to}`, error);
-    throw new Error('Failed to send password reset email');
+    throw new Error("Failed to send password reset email");
   }
 }

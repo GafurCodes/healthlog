@@ -115,6 +115,48 @@ class HealthLogProvider with ChangeNotifier {
     }
   }
 
+  Future<void> createMealLog({
+    required int calories,
+    String? name,
+    int? carbs,
+    int? protein,
+    int? fat,
+    String? notes,
+  }) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      final metrics = <String, dynamic>{
+        'calories': calories,
+      };
+
+      if (name != null) metrics['name'] = name;
+      if (carbs != null) metrics['carbs'] = carbs;
+      if (protein != null) metrics['protein'] = protein;
+      if (fat != null) metrics['fat'] = fat;
+
+      await ApiService.createLog(
+        type: 'meal',
+        metrics: metrics,
+        notes: notes,
+      );
+
+      // Refresh logs and daily calories
+      await Future.wait([
+        fetchLogs(),
+        fetchDailyCalories(),
+      ]);
+    } catch (e) {
+      _error = e.toString();
+      rethrow;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
   Future<void> refreshData() async {
     await Future.wait([
       fetchLogs(),

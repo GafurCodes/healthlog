@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/health_log_provider.dart';
-import '../theme/app_theme.dart';
 import 'login_screen.dart';
 import 'verify_email_screen.dart';
 import 'dashboard_tab.dart';
@@ -16,14 +15,13 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateMixin {
-  late TabController _tabController;
+class _HomeScreenState extends State<HomeScreen> {
+  int _currentIndex = 0;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
-    
+
     // Check email verification on mount
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkEmailVerification();
@@ -36,9 +34,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     if (authProvider.user?.emailVerified != true) {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(
-          builder: (context) => const VerifyEmailScreen(),
-        ),
+        MaterialPageRoute(builder: (context) => const VerifyEmailScreen()),
       );
     }
   }
@@ -48,12 +44,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     logProvider.refreshData();
   }
 
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
-  }
-
   Future<void> _handleLogout() async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     await authProvider.logout();
@@ -61,20 +51,16 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     if (mounted) {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(
-          builder: (context) => const LoginScreen(),
-        ),
+        MaterialPageRoute(builder: (context) => const LoginScreen()),
       );
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final authProvider = Provider.of<AuthProvider>(context);
-
     return Scaffold(
       appBar: AppBar(
-        title: const Text('HealthLog'),
+        title: const Text('Nibble'),
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
@@ -82,24 +68,27 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             tooltip: 'Logout',
           ),
         ],
-        bottom: TabBar(
-          controller: _tabController,
-          tabs: const [
-            Tab(icon: Icon(Icons.dashboard), text: 'Dashboard'),
-            Tab(icon: Icon(Icons.list), text: 'Logs'),
-            Tab(icon: Icon(Icons.add_circle), text: 'Log'),
-          ],
-        ),
       ),
-      body: TabBarView(
-        controller: _tabController,
-        children: const [
-          DashboardTab(),
-          LogListTab(),
-          LoggingTab(),
+      body: IndexedStack(
+        index: _currentIndex,
+        children: const [DashboardTab(), LoggingTab(), LogListTab()],
+      ),
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _currentIndex,
+        onTap: (index) {
+          setState(() {
+            _currentIndex = index;
+          });
+        },
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.dashboard),
+            label: 'Dashboard',
+          ),
+          BottomNavigationBarItem(icon: Icon(Icons.add_circle), label: 'Log'),
+          BottomNavigationBarItem(icon: Icon(Icons.list), label: 'Logs'),
         ],
       ),
     );
   }
 }
-

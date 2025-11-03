@@ -91,12 +91,10 @@ export async function getDailyCalories(
   try {
     const userId = req.user!.userId;
     const query = dailyCaloriesSchema.parse(req.query);
-    const startDate = new Date(query.startDate);
-    const endDate = new Date(query.endDate);
     const result = await logService.getDailyCaloriesConsumed(
       userId,
-      startDate,
-      endDate
+      query.startDate,
+      query.endDate
     );
     res.status(200).json(result);
   } catch (error) {

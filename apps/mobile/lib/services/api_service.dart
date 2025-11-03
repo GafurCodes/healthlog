@@ -190,10 +190,7 @@ class ApiService {
     final uri = Uri(path: '/logs', queryParameters: queryParams);
     final endpoint = uri.toString();
 
-    final response = await _request(
-      'GET',
-      endpoint,
-    );
+    final response = await _request('GET', endpoint);
 
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
@@ -212,10 +209,7 @@ class ApiService {
     String? notes,
     DateTime? date,
   }) async {
-    final body = <String, dynamic>{
-      'type': type,
-      'metrics': metrics,
-    };
+    final body = <String, dynamic>{'type': type, 'metrics': metrics};
 
     if (notes != null) {
       body['notes'] = notes;
@@ -224,11 +218,7 @@ class ApiService {
       body['date'] = date.toIso8601String();
     }
 
-    final response = await _request(
-      'POST',
-      '/logs',
-      body: body,
-    );
+    final response = await _request('POST', '/logs', body: body);
 
     if (response.statusCode == 201) {
       return jsonDecode(response.body);
@@ -253,10 +243,7 @@ class ApiService {
     final uri = Uri(path: '/logs/daily-calories', queryParameters: queryParams);
     final endpoint = uri.toString();
 
-    final response = await _request(
-      'GET',
-      endpoint,
-    );
+    final response = await _request('GET', endpoint);
 
     if (response.statusCode == 200) {
       return jsonDecode(response.body);

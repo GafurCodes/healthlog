@@ -122,8 +122,8 @@ export const searchLogsSchema = z.object({
 });
 
 export const dailyCaloriesSchema = z.object({
-  startDate: z.string().datetime(),
-  endDate: z.string().datetime(),
+  startDate: z.string().pipe(z.coerce.date()),
+  endDate: z.string().pipe(z.coerce.date()),
 });
 
 export type RegisterInput = z.infer<typeof registerSchema>;
