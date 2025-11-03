@@ -43,6 +43,9 @@ dependencies:
   
   # Shared preferences for storing tokens
   shared_preferences: ^2.2.2
+  
+  # Date formatting
+  intl: ^0.19.0
 
 dev_dependencies:
   flutter_test:

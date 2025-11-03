@@ -121,6 +121,11 @@ export const searchLogsSchema = z.object({
   pageSize: z.coerce.number().min(1).max(100).default(10),
 });
 
+export const dailyCaloriesSchema = z.object({
+  startDate: z.string().datetime(),
+  endDate: z.string().datetime(),
+});
+
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
 export type VerifyEmailInput = z.infer<typeof verifyEmailSchema>;
@@ -131,3 +136,4 @@ export type RefreshTokenInput = z.infer<typeof refreshTokenSchema>;
 export type CreateLogInput = z.infer<typeof createLogSchema>;
 export type UpdateLogInput = z.infer<typeof updateLogSchema>;
 export type SearchLogsInput = z.infer<typeof searchLogsSchema>;
+export type DailyCaloriesInput = z.infer<typeof dailyCaloriesSchema>;

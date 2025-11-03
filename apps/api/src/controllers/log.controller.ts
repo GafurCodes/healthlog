@@ -4,6 +4,7 @@ import {
   createLogSchema,
   updateLogSchema,
   searchLogsSchema,
+  dailyCaloriesSchema,
 } from '../utils/validation.js';
 
 export async function createLog(
@@ -76,6 +77,27 @@ export async function searchLogs(
     const userId = req.user!.userId;
     const query = searchLogsSchema.parse(req.query);
     const result = await logService.searchLogs(userId, query);
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function getDailyCalories(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const userId = req.user!.userId;
+    const query = dailyCaloriesSchema.parse(req.query);
+    const startDate = new Date(query.startDate);
+    const endDate = new Date(query.endDate);
+    const result = await logService.getDailyCaloriesConsumed(
+      userId,
+      startDate,
+      endDate
+    );
     res.status(200).json(result);
   } catch (error) {
     next(error);

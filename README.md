@@ -1,4 +1,4 @@
-# HealthLog
+# Nibble
 
 A full-stack health and wellness tracking application built with TypeScript, featuring meal logging, workout tracking, and sleep monitoring.
 

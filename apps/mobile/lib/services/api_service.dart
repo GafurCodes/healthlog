@@ -163,6 +163,111 @@ class ApiService {
       );
     }
   }
+
+  // Log endpoints
+  static Future<Map<String, dynamic>> getLogs({
+    String? type,
+    DateTime? startDate,
+    DateTime? endDate,
+    int page = 1,
+    int pageSize = 100,
+  }) async {
+    final queryParams = <String, String>{
+      'page': page.toString(),
+      'pageSize': pageSize.toString(),
+    };
+
+    if (type != null) {
+      queryParams['type'] = type;
+    }
+    if (startDate != null) {
+      queryParams['startDate'] = startDate.toIso8601String();
+    }
+    if (endDate != null) {
+      queryParams['endDate'] = endDate.toIso8601String();
+    }
+
+    final uri = Uri(path: '/logs', queryParameters: queryParams);
+    final endpoint = uri.toString();
+
+    final response = await _request(
+      'GET',
+      endpoint,
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      final error = jsonDecode(response.body);
+      throw ApiException(
+        message: error['message'] ?? 'Failed to fetch logs',
+        statusCode: response.statusCode,
+      );
+    }
+  }
+
+  static Future<Map<String, dynamic>> createLog({
+    required String type,
+    required Map<String, dynamic> metrics,
+    String? notes,
+    DateTime? date,
+  }) async {
+    final body = <String, dynamic>{
+      'type': type,
+      'metrics': metrics,
+    };
+
+    if (notes != null) {
+      body['notes'] = notes;
+    }
+    if (date != null) {
+      body['date'] = date.toIso8601String();
+    }
+
+    final response = await _request(
+      'POST',
+      '/logs',
+      body: body,
+    );
+
+    if (response.statusCode == 201) {
+      return jsonDecode(response.body);
+    } else {
+      final error = jsonDecode(response.body);
+      throw ApiException(
+        message: error['message'] ?? 'Failed to create log',
+        statusCode: response.statusCode,
+      );
+    }
+  }
+
+  static Future<Map<String, dynamic>> getDailyCalories({
+    required DateTime startDate,
+    required DateTime endDate,
+  }) async {
+    final queryParams = <String, String>{
+      'startDate': startDate.toIso8601String(),
+      'endDate': endDate.toIso8601String(),
+    };
+
+    final uri = Uri(path: '/logs/daily-calories', queryParameters: queryParams);
+    final endpoint = uri.toString();
+
+    final response = await _request(
+      'GET',
+      endpoint,
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      final error = jsonDecode(response.body);
+      throw ApiException(
+        message: error['message'] ?? 'Failed to fetch daily calories',
+        statusCode: response.statusCode,
+      );
+    }
+  }
 }
 
 class ApiException implements Exception {

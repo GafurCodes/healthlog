@@ -119,3 +119,30 @@ export async function searchLogs(
     totalPages,
   };
 }
+
+export async function getDailyCaloriesConsumed(
+  userId: string,
+  startDate: Date,
+  endDate: Date
+): Promise<{ caloriesConsumed: number }> {
+  const filter: Record<string, any> = {
+    userId,
+    type: 'meal',
+    date: {
+      $gte: startDate,
+      $lte: endDate,
+    },
+  };
+
+  const mealLogs = await Log.find(filter);
+
+  let caloriesConsumed = 0;
+  for (const log of mealLogs) {
+    const metrics = log.metrics as any;
+    if (metrics?.calories && typeof metrics.calories === 'number') {
+      caloriesConsumed += metrics.calories;
+    }
+  }
+
+  return { caloriesConsumed };
+}

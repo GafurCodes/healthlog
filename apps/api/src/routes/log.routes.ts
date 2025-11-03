@@ -8,6 +8,8 @@ router.use(requireAuth);
 
 router.get('/', logController.searchLogs);
 
+router.get('/daily-calories', logController.getDailyCalories);
+
 router.post('/', logController.createLog);
 
 router.get('/:id', logController.getLog);
