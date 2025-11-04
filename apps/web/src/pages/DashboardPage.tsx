@@ -1,25 +1,25 @@
+import { format, subDays } from 'date-fns';
 import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import {
-  LineChart,
+  CartesianGrid,
+  Legend,
   Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
   XAxis,
   YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
 } from 'recharts';
+import { handleApiError } from '../api/client';
 import type { LogsQuery } from '../api/logs';
 import { logsApi } from '../api/logs';
-import type { Log } from '../types';
+import { Button } from '../components/Button';
 import { Card, CardBody, CardHeader } from '../components/Card';
 import { Input } from '../components/Input';
-import { Button } from '../components/Button';
-import { Link } from 'react-router-dom';
-import styles from '../styles/components.module.css';
-import { handleApiError } from '../api/client';
-import { format, subDays } from 'date-fns';
 import { useAuth } from '../contexts/AuthContext';
+import styles from '../styles/components.module.css';
+import type { Log } from '../types';
 
 export const DashboardPage: React.FC = () => {
   const { user } = useAuth();
@@ -168,7 +168,7 @@ export const DashboardPage: React.FC = () => {
                 {mealLogs.length}
               </p>
               <p style={{ color: 'var(--color-text-light)', margin: 0 }}>
-                this period
+                This Period
               </p>
             </CardBody>
           </Card>
@@ -180,7 +180,7 @@ export const DashboardPage: React.FC = () => {
                 {totalCalories}
               </p>
               <p style={{ color: 'var(--color-text-light)', margin: 0 }}>
-                kcal
+                Kcal
               </p>
             </CardBody>
           </Card>
@@ -192,7 +192,7 @@ export const DashboardPage: React.FC = () => {
                 {workoutLogs.length}
               </p>
               <p style={{ color: 'var(--color-text-light)', margin: 0 }}>
-                completed
+                Completed
               </p>
             </CardBody>
           </Card>
@@ -202,7 +202,7 @@ export const DashboardPage: React.FC = () => {
               <h3 style={{ marginTop: 0 }}>Avg Sleep</h3>
               <p style={{ fontSize: '2rem', margin: '0.5rem 0' }}>{avgSleep}</p>
               <p style={{ color: 'var(--color-text-light)', margin: 0 }}>
-                hours
+                Hours
               </p>
             </CardBody>
           </Card>
@@ -236,13 +236,11 @@ export const DashboardPage: React.FC = () => {
                   onChange={(e) => setEndDate(e.target.value)}
                   min={startDate || undefined}
                 />
-                <Button
-                  fullWidth
-                  onClick={loadLogs}
-                  disabled={!isRangeValid}
-                >
-                  Refresh
-                </Button>
+                <div style={{ paddingBottom: "1.2rem" }}>
+                  <Button fullWidth onClick={loadLogs} disabled={!isRangeValid}>
+                    Refresh
+                  </Button>
+                </div>
               </div>
               {!isRangeValid && (
                 <p
