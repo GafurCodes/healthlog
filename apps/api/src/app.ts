@@ -6,6 +6,7 @@ import { getEnv } from './config/env.js';
 import { apiLimiter } from './config/rateLimiter.js';
 import authRoutes from './routes/auth.routes.js';
 import logRoutes from './routes/log.routes.js';
+import profileRoutes from './routes/profile.routes.js';
 import { errorHandler, notFoundHandler } from './middleware/error.js';
 
 export function createApp(): express.Application {
@@ -43,6 +44,7 @@ export function createApp(): express.Application {
 
   app.use('/api/auth', authRoutes);
   app.use('/api/logs', logRoutes);
+  app.use('/api/profile', profileRoutes);
 
   app.use(notFoundHandler);
   app.use(errorHandler);
