@@ -96,17 +96,21 @@ apps/api/src/
 │   └── rateLimiter.ts  # Rate limiting config
 ├── controllers/        # Request handlers
 │   ├── auth.controller.ts
-│   └── log.controller.ts
+│   ├── log.controller.ts
+│   └── profile.controller.ts
 ├── services/           # Business logic
 │   ├── auth.service.ts
 │   ├── email.service.ts
-│   └── log.service.ts
+│   ├── log.service.ts
+│   └── profile.service.ts
 ├── models/             # MongoDB schemas
 │   ├── User.ts
-│   └── Log.ts
+│   ├── Log.ts
+│   └── Profile.ts
 ├── routes/             # API routes
 │   ├── auth.routes.ts  # POST /api/auth/*
-│   └── log.routes.ts   # CRUD /api/logs/*
+│   ├── log.routes.ts   # CRUD /api/logs/*
+│   └── profile.routes.ts # CRUD /api/profile/*
 ├── middleware/         # Custom middleware
 │   ├── auth.ts         # JWT verification
 │   └── error.ts        # Error handling
@@ -114,8 +118,9 @@ apps/api/src/
 │   ├── jwt.ts          # JWT creation/verification
 │   ├── tokens.ts       # Refresh token management
 │   └── validation.ts   # Zod schemas
-└── test/               # Unit tests
-    └── setup.ts        # Jest + mongodb-memory-server
+└── __tests__/          # Integration and unit tests
+    ├── profile.test.ts
+    └── ...
 ```
 
 ### Key API Endpoints
@@ -134,6 +139,12 @@ apps/api/src/
 - `GET /api/logs/:id` - Get specific log
 - `PUT /api/logs/:id` - Update log
 - `DELETE /api/logs/:id` - Delete log
+
+#### Profile (Protected Routes)
+- `GET /api/profile` - Get user's profile and goals
+- `POST /api/profile` - Create or update user's profile and goals
+- `PUT /api/profile` - Create or update user's profile and goals
+- `DELETE /api/profile` - Delete user's profile
 
 ### Log Types & Structure
 
@@ -199,7 +210,8 @@ apps/web/src/
 ├── api/                # API client layer
 │   ├── client.ts       # Axios instance with auth interceptor
 │   ├── auth.ts         # Auth API calls
-│   └── logs.ts         # Logs API calls
+│   ├── logs.ts         # Logs API calls
+│   └── profile.ts      # Profile API calls
 ├── components/         # Reusable components
 │   ├── Button.tsx
 │   ├── Card.tsx
@@ -208,7 +220,8 @@ apps/web/src/
 │   ├── Header.tsx
 │   ├── Footer.tsx
 │   ├── ErrorBoundary.tsx
-│   └── ProtectedRoute.tsx
+│   ├── ProtectedRoute.tsx
+│   └── ProgressBar.tsx
 ├── contexts/           # React contexts
 │   ├── AuthContext.tsx      # User authentication state
 │   └── ThemeContext.tsx     # Theme (light/dark mode)
@@ -219,6 +232,7 @@ apps/web/src/
 │   ├── DashboardPage.tsx    # Charts and analytics
 │   ├── LogsPage.tsx         # List all logs
 │   ├── LogFormPage.tsx      # Create/edit logs
+│   ├── GoalsPage.tsx        # Set macro goals
 │   ├── ForgotPasswordPage.tsx
 │   ├── ResetPasswordPage.tsx
 │   ├── VerifyEmailPage.tsx
@@ -238,6 +252,7 @@ apps/web/src/
 - `/reset-password` - Reset password (with token)
 - `/verify-email` - Email verification (with token)
 - `/dashboard` - Dashboard with analytics (protected)
+- `/goals` - Set macro goals (protected)
 - `/logs` - List all logs (protected)
 - `/logs/new` - Create new log (protected)
 - `/logs/:id/edit` - Edit existing log (protected)
@@ -298,7 +313,7 @@ Tests use:
 - mongodb-memory-server (in-memory MongoDB)
 - Supertest (HTTP assertions)
 
-Test files are located in `apps/api/src/test/` and follow the pattern `*.test.ts`.
+Test files are located in `apps/api/src/__tests__/` and follow the pattern `*.test.ts`.
 
 ## 🐳 Docker Services
 
@@ -370,6 +385,10 @@ docker compose down -v
 - ✅ Add notes to any log entry
 - ✅ Date/time tracking for all entries
 
+### Goal Setting & Progress Tracking
+- ✅ Set daily goals for calories, protein, carbs, and fat
+- ✅ View daily progress towards macro goals on the logs page
+
 ### Analytics & Visualization
 - ✅ Dashboard with summary cards
 - ✅ Charts for calorie trends
@@ -392,7 +411,7 @@ docker compose down -v
 1. Use `createApp()` in `apps/api/src/app.ts` for testable changes
 2. Add routes in `routes/`, controllers in `controllers/`, business logic in `services/`
 3. Validate input with Zod schemas in `utils/validation.ts`
-4. Write tests in `test/` directory
+4. Write tests in `__tests__/` directory
 5. Run tests before committing: `npm test`
 
 ### Frontend Development
@@ -441,6 +460,22 @@ docker compose down -v
   metrics: Mixed (type-specific data),
   date: Date (indexed),
   notes?: string,
+  createdAt: Date,
+  updatedAt: Date
+}
+```
+
+### Profile Collection
+```typescript
+{
+  _id: ObjectId,
+  userId: ObjectId (ref: User, unique, indexed),
+  goals: {
+    calories: number,
+    protein: number,
+    carbs: number,
+    fats: number
+  },
   createdAt: Date,
   updatedAt: Date
 }
