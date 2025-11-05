@@ -1,10 +1,10 @@
 name: Deploy Web
 on:
   push:
-    branches: [ "main" ]
+    branches: ['main']
     paths:
-      - "apps/web/**"
-      - ".github/workflows/deploy-web.yml"
+      - 'apps/web/**'
+      - '.github/workflows/deploy-web.yml'
 
 jobs:
   deploy:
@@ -13,6 +13,20 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Install & Build (CI)
+        working-directory: apps/web
+        run: |
+          npm ci
+          npm run build
+          test -f dist/index.html
+
       - name: Setup SSH
         run: |
           mkdir -p ~/.ssh
@@ -20,16 +34,21 @@ jobs:
           chmod 600 ~/.ssh/id_ed25519
           ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
 
-      - name: Rsync Web sources to server
+      - name: Upload release, flip symlink, reload nginx
+        env:
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_HOST: ${{ secrets.SSH_HOST }}
         run: |
-          rsync -az --delete apps/web/ ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/var/www/healthlog/web/
-
-      - name: Install deps, build, and reload Nginx
-        run: |
-          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'REMOTE'
-          set -e
-          cd /var/www/healthlog/web
-          npm ci
-          npm run build
-          sudo nginx -t && sudo systemctl reload nginx
-          REMOTE
+          set -euo pipefail
+          TS="$(date +%Y%m%d-%H%M%S)"
+          REL="/var/www/healthlog/releases/${TS}"
+          ssh -o StrictHostKeyChecking=no "$SSH_USER@$SSH_HOST" "sudo -u www-data mkdir -p '$REL'"
+          rsync -az --delete \
+            -e "ssh -o StrictHostKeyChecking=no" \
+            --rsync-path="sudo rsync" \
+            apps/web/dist/ "$SSH_USER@$SSH_HOST:$REL/"
+          ssh -o StrictHostKeyChecking=no "$SSH_USER@$SSH_HOST" "\
+            sudo ln -sfn '$REL' /var/www/healthlog/current && \
+            sudo nginx -t && \
+            sudo systemctl reload nginx \
+          "
