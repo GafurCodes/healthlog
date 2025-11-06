@@ -167,18 +167,34 @@ body {
   bottom: 0;
   background-color: rgba(0, 0, 0, 0.5);
   display: flex;
-  align-items: center;
   justify-content: center;
+  align-items: center;
   z-index: 1000;
 }
 
+.progress-bar-container {
+  margin-bottom: 1rem;
+}
+
+.progress-bar-background {
+  height: 10px;
+  background-color: var(--color-border);
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.progress-bar-foreground {
+  height: 100%;
+  transition: width 0.3s ease-in-out;
+}
+
 .modal-content {
-  background-color: var(--color-bg);
-  border-radius: var(--radius);
+  background-color: var(--color-background-alt);
+  padding: 2rem;
+  border-radius: var(--border-radius);
   max-width: 500px;
-  width: 90%;
-  max-height: 90vh;
-  overflow-y: auto;
+  width: 100%;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 .modal-header {

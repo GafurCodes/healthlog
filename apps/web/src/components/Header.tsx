@@ -29,6 +29,7 @@ export const Header: React.FC = () => {
           {isAuthenticated ? (
             <>
               <Link to="/dashboard">Dashboard</Link>
+              <Link to="/goals">Goals</Link>
               <Link to="/logs">Logs</Link>
               <span className={styles["header-user"]}>Hi, {user?.name}</span>
               <Button variant="secondary" onClick={toggleTheme}>
