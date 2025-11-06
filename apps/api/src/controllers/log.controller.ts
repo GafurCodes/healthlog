@@ -1,11 +1,11 @@
-import { Request, Response, NextFunction } from 'express';
-import * as logService from '../services/log.service.js';
+import { Request, Response, NextFunction } from "express";
+import * as logService from "../services/log.service.js";
 import {
   createLogSchema,
   updateLogSchema,
   searchLogsSchema,
   dailyCaloriesSchema,
-} from '../utils/validation.js';
+} from "../utils/validation.js";
 
 export async function createLog(
   req: Request,
@@ -96,6 +96,20 @@ export async function getDailyCalories(
       query.startDate,
       query.endDate
     );
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function getDishInfoFromImage(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const rawParam = req.params.image_b64;
+    const result = logService.getDishInfoFromImage(rawParam);
     res.status(200).json(result);
   } catch (error) {
     next(error);

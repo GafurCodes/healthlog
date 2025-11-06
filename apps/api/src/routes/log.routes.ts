@@ -1,21 +1,23 @@
-import { Router } from 'express';
-import * as logController from '../controllers/log.controller.js';
-import { requireAuth } from '../middleware/auth.js';
+import { Router } from "express";
+import * as logController from "../controllers/log.controller.js";
+import { requireAuth } from "../middleware/auth.js";
 
 const router = Router();
 
 router.use(requireAuth);
 
-router.get('/', logController.searchLogs);
+router.get("/", logController.searchLogs);
 
-router.get('/daily-calories', logController.getDailyCalories);
+router.get("/daily-calories", logController.getDailyCalories);
 
-router.post('/', logController.createLog);
+router.post("/", logController.createLog);
 
-router.get('/:id', logController.getLog);
+router.get("/:id", logController.getLog);
 
-router.put('/:id', logController.updateLog);
+router.put("/:id", logController.updateLog);
 
-router.delete('/:id', logController.deleteLog);
+router.delete("/:id", logController.deleteLog);
+
+router.get("/image/:image_b64", logController.getDishInfoFromImage);
 
 export default router;
