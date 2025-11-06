@@ -13,6 +13,17 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Prepare deployment directory
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            # Create directory and set ownership
+            sudo mkdir -p /opt/healthlog
+            sudo chown -R $USER:$USER /opt/healthlog
+
       - name: Copy code to droplet
         uses: appleboy/scp-action@v0.1.7
         with:
