@@ -18,7 +18,7 @@ export const HomePage: React.FC = () => {
     <div className={styles.container}>
       <div style={{ maxWidth: '800px', margin: '0 auto', textAlign: 'center' }}>
         <h1 style={{ fontSize: '3rem', margin: '2rem 0' }}>
-          Welcome to Nibble
+          Welcome to Nibble test
         </h1>
         <p
           style={{
