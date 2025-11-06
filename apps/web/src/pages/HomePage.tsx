@@ -1,8 +1,8 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
 import { Button } from '../components/Button';
 import { Card, CardBody } from '../components/Card';
+import { useAuth } from '../contexts/AuthContext';
 import styles from '../styles/components.module.css';
 
 export const HomePage: React.FC = () => {
@@ -56,6 +56,12 @@ export const HomePage: React.FC = () => {
             <CardBody>
               <h3>😴 Monitor Sleep</h3>
               <p>Track your sleep patterns and improve sleep quality</p>
+            </CardBody>
+          </Card>
+          <Card>
+            <CardBody>
+              <h3>📈 View Insights</h3>
+              <p>Analyze trends across meals, workouts, and sleep to optimize your lifestyle</p>
             </CardBody>
           </Card>
         </div>
