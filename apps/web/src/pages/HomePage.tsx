@@ -61,7 +61,10 @@ export const HomePage: React.FC = () => {
           <Card>
             <CardBody>
               <h3>📈 View Insights</h3>
-              <p>Analyze trends across meals, workouts, and sleep to optimize your lifestyle</p>
+              <p>
+                Analyze trends across meals, workouts, and sleep to optimize
+                your lifestyle
+              </p>
             </CardBody>
           </Card>
         </div>

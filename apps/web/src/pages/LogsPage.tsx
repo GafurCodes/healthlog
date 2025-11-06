@@ -2,11 +2,14 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { LogsQuery } from '../api/logs';
 import { logsApi } from '../api/logs';
-import type { Log } from '../types';
+import { profileApi } from '../api/profile';
+import type { ProfileGoals } from '../api/profile';
+import type { Log, MealLog } from '../types';
 import { Button } from '../components/Button';
 import { Card, CardBody, CardHeader } from '../components/Card';
 import { Input, Select } from '../components/Input';
 import { Modal } from '../components/Modal';
+import { ProgressBar } from '../components/ProgressBar';
 import styles from '../styles/components.module.css';
 import { handleApiError } from '../api/client';
 import { format } from 'date-fns';
@@ -21,6 +24,8 @@ export const LogsPage: React.FC = () => {
   const [type, setType] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [goals, setGoals] = useState<ProfileGoals | null>(null);
+  const [todaysMacros, setTodaysMacros] = useState<Partial<MealLog>>({ calories: 0, protein: 0, carbs: 0, fat: 0 });
 
   const loadLogs = async () => {
     setLoading(true);
@@ -46,12 +51,41 @@ export const LogsPage: React.FC = () => {
     }
   };
 
+  const loadGoalsAndTodaysMacros = async () => {
+    try {
+      const goalsRes = await profileApi.get();
+      if (goalsRes.data) {
+        setGoals(goalsRes.data.goals);
+      }
+
+      const today = format(new Date(), 'yyyy-MM-dd');
+      const todaysLogsRes = await logsApi.list({ type: 'meal', startDate: today, endDate: today, pageSize: 100 });
+      const todaysMealLogs = todaysLogsRes.data.data as (Log & { metrics: MealLog })[] | undefined;
+
+      if (todaysMealLogs) {
+        const macros = todaysMealLogs.reduce((acc, log) => {
+          return {
+            calories: acc.calories + (log.metrics.calories || 0),
+            protein: acc.protein + (log.metrics.protein || 0),
+            carbs: acc.carbs + (log.metrics.carbs || 0),
+            fat: acc.fat + (log.metrics.fat || 0),
+          };
+        }, { calories: 0, protein: 0, carbs: 0, fat: 0 });
+        setTodaysMacros(macros as any);
+      }
+
+    } catch (err) {
+      // Ignore errors, as goals might not be set
+    }
+  };
+
   useEffect(() => {
     setPage(1);
   }, [type, startDate, endDate]);
 
   useEffect(() => {
     loadLogs();
+    loadGoalsAndTodaysMacros();
   }, [page, type, startDate, endDate]);
 
   const handleDelete = async (id: string) => {
@@ -59,6 +93,7 @@ export const LogsPage: React.FC = () => {
       await logsApi.delete(id);
       setLogs((prev) => prev.filter((l) => l.id !== id));
       setDeleteConfirm(null);
+      loadGoalsAndTodaysMacros(); // Recalculate macros after deleting a log
     } catch (err) {
       const apiError = handleApiError(err);
       setError(apiError.message || '');
@@ -109,6 +144,20 @@ export const LogsPage: React.FC = () => {
           <Button>+ New Log</Button>
         </Link>
       </div>
+
+      {goals && (
+        <Card style={{ marginBottom: '2rem' }}>
+          <CardHeader>
+            <h3 style={{ margin: 0 }}>Today's Progress</h3>
+          </CardHeader>
+          <CardBody>
+            <ProgressBar label="Calories" value={todaysMacros.calories || 0} max={goals.calories} color="yellow" />
+            <ProgressBar label="Protein" value={todaysMacros.protein || 0} max={goals.protein} color="red" />
+            <ProgressBar label="Carbs" value={todaysMacros.carbs || 0} max={goals.carbs} color="blue" />
+            <ProgressBar label="Fat" value={todaysMacros.fat || 0} max={goals.fats} color="green" />
+          </CardBody>
+        </Card>
+      )}
 
       <Card style={{ marginBottom: '2rem' }}>
         <CardHeader>
