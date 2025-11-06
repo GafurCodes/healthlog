@@ -1,0 +1,42 @@
+name: Deploy to DigitalOcean with Docker Compose
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Copy code to droplet
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.DROPLET_SSH_HOST }}
+          username: ${{ secrets.DROPLET_SSH_USER }}
+          key: ${{ secrets.DROPLET_SSH_KEY }}
+          source: "."
+          target: "/opt/healthlog"
+          overwrite: true
+          strip_components: 0
+
+      - name: Deploy with Docker Compose
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.DROPLET_SSH_HOST }}
+          username: ${{ secrets.DROPLET_SSH_USER }}
+          key: ${{ secrets.DROPLET_SSH_KEY }}
+          script: |
+            cd /opt/healthlog
+
+            # Rebuild and restart containers
+            docker-compose down
+            docker-compose build --no-cache
+            docker-compose up -d
+
+            # Show status
+            docker-compose ps

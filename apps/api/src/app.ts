@@ -18,7 +18,12 @@ export function createApp(): express.Application {
   // Parse CORS_ORIGIN to handle multiple origins
   const corsOrigins = env.CORS_ORIGIN.split(',').map((origin) => origin.trim());
 
-  app.use(cors());
+  app.use(
+    cors({
+      origin: corsOrigins,
+      credentials: true,
+    })
+  );
 
   app.use(compression());
 

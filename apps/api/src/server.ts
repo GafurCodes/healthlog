@@ -3,7 +3,6 @@ import { initializeEnv } from './config/env.js';
 import { initializeEmailService } from './services/email.service.js';
 import { connectDB, disconnectDB } from './db/mongoose.js';
 import { createApp } from './app.js';
-import cors from 'cors';
 
 async function startServer(): Promise<void> {
   try {
@@ -17,7 +16,6 @@ async function startServer(): Promise<void> {
     await connectDB();
 
     const app = createApp();
-    app.use(cors());
     const server = app.listen(env.PORT, () => {
       console.log(`Server running on port ${env.PORT} in ${env.NODE_ENV} mode`);
     });
