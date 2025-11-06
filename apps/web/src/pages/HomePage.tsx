@@ -18,7 +18,7 @@ export const HomePage: React.FC = () => {
     <div className={styles.container}>
       <div style={{ maxWidth: '800px', margin: '0 auto', textAlign: 'center' }}>
         <h1 style={{ fontSize: '3rem', margin: '2rem 0' }}>
-          Welcome to Nibble test
+          Welcome to Nibble
         </h1>
         <p
           style={{
@@ -61,7 +61,10 @@ export const HomePage: React.FC = () => {
           <Card>
             <CardBody>
               <h3>📈 View Insights</h3>
-              <p>Analyze trends across meals, workouts, and sleep to optimize your lifestyle</p>
+              <p>
+                Analyze trends across meals, workouts, and sleep to optimize
+                your lifestyle
+              </p>
             </CardBody>
           </Card>
         </div>
