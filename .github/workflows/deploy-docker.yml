@@ -44,9 +44,9 @@ jobs:
             cd ~/healthlog
 
             # Rebuild and restart containers
-            docker-compose down
-            docker-compose build --no-cache
-            docker-compose up -d
+            docker compose down
+            docker compose build --no-cache
+            docker compose up -d
 
             # Show status
-            docker-compose ps
+            docker compose ps
