@@ -54,6 +54,31 @@ jobs:
           overwrite: true
           strip_components: 0
 
+      - name: Install Docker Compose if needed
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            # Check if docker compose works
+            if ! docker compose version &> /dev/null; then
+              echo "Docker Compose not found, installing..."
+
+              # Install Docker Compose plugin
+              DOCKER_CONFIG=${DOCKER_CONFIG:-$HOME/.docker}
+              mkdir -p $DOCKER_CONFIG/cli-plugins
+              curl -SL https://github.com/docker/compose/releases/download/v2.24.5/docker-compose-linux-x86_64 -o $DOCKER_CONFIG/cli-plugins/docker-compose
+              chmod +x $DOCKER_CONFIG/cli-plugins/docker-compose
+
+              echo "Docker Compose installed successfully"
+            else
+              echo "Docker Compose already installed"
+            fi
+
+            # Verify installation
+            docker compose version
+
       - name: Deploy with Docker Compose
         uses: appleboy/ssh-action@v1.0.3
         with:
