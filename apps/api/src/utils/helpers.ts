@@ -1,7 +1,7 @@
 import "dotenv/config";
 import { Pinecone } from "@pinecone-database/pinecone";
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { CLIPModel, AutoProcessor } from "@xenova/transformers";
+import { CLIPModel, AutoProcessor } from "@huggingface/transformers";
 import sharp from "sharp";
 
 // -----------------------
