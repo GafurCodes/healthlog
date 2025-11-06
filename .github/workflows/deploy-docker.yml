@@ -20,9 +20,8 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            # Create directory and set ownership
-            sudo mkdir -p /opt/healthlog
-            sudo chown -R $USER:$USER /opt/healthlog
+            # Create directory in home
+            mkdir -p ~/healthlog
 
       - name: Copy code to droplet
         uses: appleboy/scp-action@v0.1.7
@@ -31,7 +30,7 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           source: "."
-          target: "/opt/healthlog"
+          target: "~/healthlog"
           overwrite: true
           strip_components: 0
 
@@ -42,7 +41,7 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            cd /opt/healthlog
+            cd ~/healthlog
 
             # Rebuild and restart containers
             docker-compose down
