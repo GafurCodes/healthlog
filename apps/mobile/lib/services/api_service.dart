@@ -255,6 +255,67 @@ class ApiService {
       );
     }
   }
+
+  static Future<Map<String, dynamic>?> getDishInfoFromImage(
+    String imageBase64,
+  ) async {
+    // Send base64 image in request body to avoid URL length limitations
+    final endpoint = '/logs/image';
+
+    final response = await _request(
+      'POST',
+      endpoint,
+      body: {'image_b64': imageBase64},
+    );
+
+    if (response.statusCode == 200) {
+      // The response body might be:
+      // 1. null (if dish not found)
+      // 2. A JSON string (if Express stringified a string result)
+      // 3. A JSON object (if already parsed)
+      final responseBody = response.body.trim();
+      
+      if (responseBody == 'null' || responseBody.isEmpty) {
+        return null;
+      }
+
+      try {
+        // Parse the response
+        final parsed = jsonDecode(responseBody);
+        
+        // If the parsed result is null, return null
+        if (parsed == null) {
+          return null;
+        }
+        
+        // If the parsed result is a string (JSON string), parse it again
+        if (parsed is String) {
+          try {
+            return jsonDecode(parsed) as Map<String, dynamic>;
+          } catch (e) {
+            // If parsing fails, return null
+            return null;
+          }
+        }
+        
+        // If it's already a Map, return it
+        if (parsed is Map<String, dynamic>) {
+          return parsed;
+        }
+        
+        return null;
+      } catch (e) {
+        // If parsing fails, return null
+        return null;
+      }
+    } else {
+      final error = jsonDecode(response.body);
+      throw ApiException(
+        message: error['message'] ?? 'Failed to get dish info from image',
+        statusCode: response.statusCode,
+      );
+    }
+  }
 }
 
 class ApiException implements Exception {

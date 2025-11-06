@@ -59,11 +59,13 @@ async function loadClip(): Promise<{
   processor: ClipProcessorType;
 }> {
   if (!clipModelPromise) {
+    // Use Xenova's converted CLIP model which has ONNX files available
+    // Xenova models are pre-converted to ONNX format and guaranteed to work
     clipModelPromise = CLIPModel.from_pretrained(
-      "openai/clip-vit-large-patch14-336"
+      "Xenova/clip-vit-large-patch14-336"
     );
     clipProcessorPromise = AutoProcessor.from_pretrained(
-      "openai/clip-vit-large-patch14-336"
+      "Xenova/clip-vit-large-patch14-336"
     );
   }
 

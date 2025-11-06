@@ -108,8 +108,12 @@ export async function getDishInfoFromImage(
   next: NextFunction
 ): Promise<void> {
   try {
-    const rawParam = req.params.image_b64;
-    const result = logService.getDishInfoFromImage(rawParam);
+    const { image_b64 } = req.body;
+    if (!image_b64 || typeof image_b64 !== 'string') {
+      res.status(400).json({ message: 'image_b64 is required in request body' });
+      return;
+    }
+    const result = await logService.getDishInfoFromImage(image_b64);
     res.status(200).json(result);
   } catch (error) {
     next(error);

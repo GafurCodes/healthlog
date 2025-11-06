@@ -10,6 +10,8 @@ router.get("/", logController.searchLogs);
 
 router.get("/daily-calories", logController.getDailyCalories);
 
+router.post("/image", logController.getDishInfoFromImage);
+
 router.post("/", logController.createLog);
 
 router.get("/:id", logController.getLog);
@@ -17,7 +19,5 @@ router.get("/:id", logController.getLog);
 router.put("/:id", logController.updateLog);
 
 router.delete("/:id", logController.deleteLog);
-
-router.get("/image/:image_b64", logController.getDishInfoFromImage);
 
 export default router;

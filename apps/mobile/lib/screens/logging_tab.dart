@@ -1,4 +1,7 @@
+import 'dart:convert';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import '../providers/health_log_provider.dart';
 import '../theme/app_theme.dart';
@@ -14,7 +17,9 @@ class LoggingTab extends StatefulWidget {
 
 class _LoggingTabState extends State<LoggingTab> {
   final _formKey = GlobalKey<FormState>();
+  final _imagePicker = ImagePicker();
   LogType _selectedLogType = LogType.meal;
+  Uint8List? _selectedImageBytes;
   final _caloriesController = TextEditingController();
   final _nameController = TextEditingController();
   final _carbsController = TextEditingController();
@@ -36,6 +41,9 @@ class _LoggingTabState extends State<LoggingTab> {
   }
 
   void _clearForm() {
+    setState(() {
+      _selectedImageBytes = null;
+    });
     _caloriesController.clear();
     _nameController.clear();
     _carbsController.clear();
@@ -43,6 +51,121 @@ class _LoggingTabState extends State<LoggingTab> {
     _fatController.clear();
     _durationController.clear();
     _notesController.clear();
+  }
+
+  Future<void> _pickImage(ImageSource source) async {
+    try {
+      final XFile? image = await _imagePicker.pickImage(
+        source: source,
+        maxWidth: 1024,
+        maxHeight: 1024,
+        imageQuality: 85,
+      );
+
+      if (image != null) {
+        // Read image bytes (works on both web and mobile)
+        final bytes = await image.readAsBytes();
+        setState(() {
+          _selectedImageBytes = bytes;
+        });
+        await _processImage(bytes);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to pick image: ${e.toString()}'),
+            backgroundColor: AppTheme.danger,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _processImage(Uint8List imageBytes) async {
+    try {
+      // Convert image bytes to base64
+      final base64Image = base64Encode(imageBytes);
+
+      final logProvider = Provider.of<HealthLogProvider>(context, listen: false);
+
+      // Show loading indicator
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Row(
+              children: [
+                SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
+                ),
+                SizedBox(width: 16),
+                Text('Analyzing image...'),
+              ],
+            ),
+            duration: Duration(seconds: 30),
+          ),
+        );
+      }
+
+      final dishInfo = await logProvider.getDishInfoFromImage(base64Image);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+
+        if (dishInfo != null) {
+          // Populate form fields with dish information
+          if (dishInfo['dish_title'] != null) {
+            _nameController.text = dishInfo['dish_title'].toString();
+          }
+          if (dishInfo['total_calories'] != null) {
+            _caloriesController.text = dishInfo['total_calories'].toString();
+          }
+          if (dishInfo['total_carbs'] != null) {
+            _carbsController.text = dishInfo['total_carbs'].toString();
+          }
+          if (dishInfo['total_protein'] != null) {
+            _proteinController.text = dishInfo['total_protein'].toString();
+          }
+          if (dishInfo['total_fat'] != null) {
+            _fatController.text = dishInfo['total_fat'].toString();
+          }
+          if (dishInfo['description'] != null) {
+            _notesController.text = dishInfo['description'].toString();
+          }
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Dish information loaded successfully!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Could not identify dish from image. Please enter details manually.'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Failed to process image: ${e.toString()}',
+            ),
+            backgroundColor: AppTheme.danger,
+          ),
+        );
+      }
+    }
   }
 
   Future<void> _handleSubmit() async {
@@ -173,6 +296,72 @@ class _LoggingTabState extends State<LoggingTab> {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 24),
+            // Image upload section (only for meals)
+            if (_selectedLogType == LogType.meal) ...[
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      const Text(
+                        'Log Meal from Image',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: AppTheme.text,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton.icon(
+                              onPressed: () => _pickImage(ImageSource.camera),
+                              icon: const Icon(Icons.camera_alt),
+                              label: const Text('Take Photo'),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: OutlinedButton.icon(
+                              onPressed: () => _pickImage(ImageSource.gallery),
+                              icon: const Icon(Icons.photo_library),
+                              label: const Text('Choose from Gallery'),
+                            ),
+                          ),
+                        ],
+                      ),
+                      if (_selectedImageBytes != null) ...[
+                        const SizedBox(height: 12),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: Image.memory(
+                            _selectedImageBytes!,
+                            height: 200,
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        TextButton.icon(
+                          onPressed: () {
+                            setState(() {
+                              _selectedImageBytes = null;
+                            });
+                          },
+                          icon: const Icon(Icons.delete_outline),
+                          label: const Text('Remove Image'),
+                          style: TextButton.styleFrom(
+                            foregroundColor: AppTheme.danger,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+            ],
             // Log type selector
             SegmentedButton<LogType>(
               segments: const [

@@ -163,5 +163,22 @@ class HealthLogProvider with ChangeNotifier {
       fetchDailyCalories(),
     ]);
   }
+
+  Future<Map<String, dynamic>?> getDishInfoFromImage(String imageBase64) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      final response = await ApiService.getDishInfoFromImage(imageBase64);
+      return response;
+    } catch (e) {
+      _error = e.toString();
+      rethrow;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
 }
 
