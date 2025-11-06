@@ -20,8 +20,28 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            # Create directory in home
-            mkdir -p ~/healthlog
+            # Backup .env files if they exist
+            if [ -f ~/healthlog/apps/api/.env ]; then
+              cp ~/healthlog/apps/api/.env /tmp/api.env.backup
+            fi
+            if [ -f ~/healthlog/apps/web/.env ]; then
+              cp ~/healthlog/apps/web/.env /tmp/web.env.backup
+            fi
+
+            # Remove old directory completely
+            rm -rf ~/healthlog
+
+            # Create fresh directory
+            mkdir -p ~/healthlog/apps/api
+            mkdir -p ~/healthlog/apps/web
+
+            # Restore .env files if they were backed up
+            if [ -f /tmp/api.env.backup ]; then
+              mv /tmp/api.env.backup ~/healthlog/apps/api/.env
+            fi
+            if [ -f /tmp/web.env.backup ]; then
+              mv /tmp/web.env.backup ~/healthlog/apps/web/.env
+            fi
 
       - name: Copy code to droplet
         uses: appleboy/scp-action@v0.1.7
