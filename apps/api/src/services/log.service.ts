@@ -9,9 +9,7 @@ import {
   encodeImageClipFromBase64,
   inferDishWithGemini,
   index,
-  ingredientsToText,
-  encodeTextClip,
-  dot,
+  extractIngredientNames,
 } from "../utils/helpers.js";
 
 import type { Neighbor } from "../utils/helpers.js";
@@ -175,14 +173,12 @@ export async function getDailyCaloriesConsumed(
 }
 
 // -----------------------
-// testIndex: hybrid search -> Gemini guess ONLY
+// testIndex: image search -> neighbors + Gemini summary
 // -----------------------
 export async function getDishInfoFromImage(
   imageB64: string,
-  topK: number = 10,
-  alpha: number = 0.7,
-  beta: number = 0.3
-): Promise<string | null> {
+  topK: number = 10
+): Promise<{ neighbors: Neighbor[]; gemini_summary: string | null }> {
   if (!imageB64) {
     throw new Error("imageB64 is required");
   }
@@ -194,10 +190,10 @@ export async function getDishInfoFromImage(
     throw new Error("image_b64 is not valid base64");
   }
 
-  // 1) Encode query image
-  const queryVec = await encodeImageClipFromBase64(imageB64, { tta: true });
+  // 1) Encode query image using CLIP
+  const queryVec = await encodeImageClipFromBase64(imageB64);
 
-  // 2) Pinecone query (image-only)
+  // 2) Search Pinecone index for k nearest results
   const resp = await index.query({
     vector: queryVec,
     topK: Number(topK),
@@ -207,25 +203,22 @@ export async function getDishInfoFromImage(
 
   const matches: PineconeMatch[] = resp.matches ?? [];
   if (!matches.length) {
-    return null; // or JSON.stringify({ gemini_guess: null })
+    return { neighbors: [], gemini_summary: null };
   }
 
-  // 3) Build neighbor context + ingredient texts
-  const neighbors: Neighbor[] = [];
-  const ingredTexts: string[] = [];
-  const imageSims: number[] = [];
+  // 3) Build neighbor context lines (matching Python logic)
+  const contextLines: Neighbor[] = [];
 
   for (const m of matches) {
     const meta = m.metadata ?? {};
-    const ing = (meta.ingredients ?? []) as Neighbor["ingredients"];
-    const ingText = ingredientsToText(ing);
+    const ingredientsRaw = meta.ingredients;
 
-    ingredTexts.push(ingText);
-    imageSims.push(typeof m.score === "number" ? m.score : 0);
+    // Extract ingredient names as string array
+    const ingNames = extractIngredientNames(ingredientsRaw);
 
-    neighbors.push({
+    contextLines.push({
       id: m.id,
-      score_image: typeof m.score === "number" ? m.score : null,
+      score: typeof m.score === "number" ? m.score : null,
       file_name: meta.file_name,
       split: meta.split,
       total_calories: meta.total_calories,
@@ -233,29 +226,17 @@ export async function getDishInfoFromImage(
       total_fat: meta.total_fat,
       total_carb: meta.total_carb,
       total_protein: meta.total_protein,
-      ingredients: Array.isArray(ing) ? ing : [],
+      ingredients: ingNames,
     });
   }
 
-  // 4) Ingredient-text similarity via CLIP
-  const textEmbeds = await encodeTextClip(ingredTexts.map((t) => t || ""));
+  // 4) Ask Gemini using neighbors context (no image)
+  const geminiSummary = await inferDishWithGemini(contextLines);
 
-  const finalSims: number[] = neighbors.map((_, i) => {
-    const imgSim = Math.max(-1, Math.min(1, imageSims[i] ?? 0));
-    const txtSim = Math.max(-1, Math.min(1, dot(queryVec, textEmbeds[i])));
-    return alpha * imgSim + beta * txtSim;
-  });
+  console.log("geminiSummary: ", geminiSummary);
 
-  // 5) Re-rank neighbors by hybrid similarity
-  const order = finalSims
-    .map((v, i) => [v, i] as [number, number])
-    .sort((a, b) => b[0] - a[0])
-    .map(([, i]) => i);
-
-  const rerankedNeighbors: Neighbor[] = order.map((idx) => neighbors[idx]);
-
-  // 6) Ask Gemini using reranked neighbors; ONLY return Gemini guess
-  const geminiGuess = await inferDishWithGemini(imageB64, rerankedNeighbors);
-
-  return geminiGuess;
+  return {
+    neighbors: contextLines,
+    gemini_summary: geminiSummary,
+  };
 }

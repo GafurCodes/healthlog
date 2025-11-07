@@ -5,7 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 class ApiService {
   static const String baseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'http://localhost:4000/api',
+    defaultValue: 'http://10.182.159.244:4000/api',
   );
 
   static const String _accessTokenKey = 'accessToken';
@@ -274,7 +274,7 @@ class ApiService {
       // 2. A JSON string (if Express stringified a string result)
       // 3. A JSON object (if already parsed)
       final responseBody = response.body.trim();
-      
+
       if (responseBody == 'null' || responseBody.isEmpty) {
         return null;
       }
@@ -282,12 +282,12 @@ class ApiService {
       try {
         // Parse the response
         final parsed = jsonDecode(responseBody);
-        
+
         // If the parsed result is null, return null
         if (parsed == null) {
           return null;
         }
-        
+
         // If the parsed result is a string (JSON string), parse it again
         if (parsed is String) {
           try {
@@ -297,12 +297,12 @@ class ApiService {
             return null;
           }
         }
-        
+
         // If it's already a Map, return it
         if (parsed is Map<String, dynamic>) {
           return parsed;
         }
-        
+
         return null;
       } catch (e) {
         // If parsing fails, return null
@@ -338,11 +338,7 @@ class ApiService {
   static Future<Map<String, dynamic>> updateProfile({
     required Map<String, dynamic> goals,
   }) async {
-    final response = await _request(
-      'PUT',
-      '/profile',
-      body: {'goals': goals},
-    );
+    final response = await _request('PUT', '/profile', body: {'goals': goals});
 
     if (response.statusCode == 200) {
       return jsonDecode(response.body);

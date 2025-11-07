@@ -1,8 +1,12 @@
 import "dotenv/config";
 import { Pinecone } from "@pinecone-database/pinecone";
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { CLIPModel, AutoProcessor } from "@huggingface/transformers";
-import sharp from "sharp";
+import {
+  CLIPVisionModelWithProjection,
+  AutoProcessor,
+  pipeline,
+  RawImage,
+} from "@huggingface/transformers";
 
 // -----------------------
 // Types
@@ -10,7 +14,7 @@ import sharp from "sharp";
 
 export interface Neighbor {
   id?: string;
-  score_image?: number | null;
+  score?: number | null;
   file_name?: string;
   split?: string;
   total_calories?: number;
@@ -18,7 +22,7 @@ export interface Neighbor {
   total_fat?: number;
   total_carb?: number;
   total_protein?: number;
-  ingredients?: Array<string | { name?: string }>;
+  ingredients?: string[]; // Changed to string array to match Python
 }
 
 type ClipModelType = any; // from @xenova/transformers (no strict types)
@@ -61,8 +65,11 @@ async function loadClip(): Promise<{
   if (!clipModelPromise) {
     // Use Xenova's converted CLIP model which has ONNX files available
     // Xenova models are pre-converted to ONNX format and guaranteed to work
-    clipModelPromise = CLIPModel.from_pretrained(
-      "Xenova/clip-vit-large-patch14-336"
+    clipModelPromise = CLIPVisionModelWithProjection.from_pretrained(
+      "Xenova/clip-vit-large-patch14-336",
+      {
+        device: "cpu",
+      }
     );
     clipProcessorPromise = AutoProcessor.from_pretrained(
       "Xenova/clip-vit-large-patch14-336"
@@ -95,31 +102,44 @@ export function dot(a: number[], b: number[]): number {
   return s;
 }
 
-export function ingredientsToText(ingredientsField: unknown): string {
-  if (ingredientsField == null) return "";
+// Extract ingredient names as string array (matching Python logic)
+export function extractIngredientNames(ingredientsField: unknown): string[] {
+  if (ingredientsField == null) return [];
 
   const names: string[] = [];
 
-  if (Array.isArray(ingredientsField)) {
-    for (const it of ingredientsField) {
+  // Handle JSON string (as stored in Pinecone metadata)
+  let parsed: unknown = ingredientsField;
+  if (typeof ingredientsField === "string") {
+    try {
+      parsed = JSON.parse(ingredientsField);
+    } catch {
+      // If not valid JSON, treat as string
+      parsed = ingredientsField;
+    }
+  }
+
+  if (Array.isArray(parsed)) {
+    for (const it of parsed) {
       if (it && typeof it === "object" && "name" in it) {
         const name = (it as { name?: unknown }).name;
-        names.push(String(name));
-      } else {
+        if (name != null) names.push(String(name));
+      } else if (it != null) {
         names.push(String(it));
       }
     }
-  } else if (
-    ingredientsField &&
-    typeof ingredientsField === "object" &&
-    "name" in ingredientsField
-  ) {
-    const name = (ingredientsField as { name?: unknown }).name;
-    names.push(String(name));
-  } else {
-    names.push(String(ingredientsField));
+  } else if (parsed && typeof parsed === "object" && "name" in parsed) {
+    const name = (parsed as { name?: unknown }).name;
+    if (name != null) names.push(String(name));
+  } else if (parsed != null) {
+    names.push(String(parsed));
   }
 
+  return names;
+}
+
+export function ingredientsToText(ingredientsField: unknown): string {
+  const names = extractIngredientNames(ingredientsField);
   return names
     .map((n) => n.trim().toLowerCase())
     .filter((n) => n.length > 0)
@@ -136,58 +156,24 @@ interface EncodeImageOptions {
 
 export async function encodeImageClipFromBase64(
   imageB64: string,
-  { tta = true }: EncodeImageOptions = {}
+  _options: EncodeImageOptions = {}
 ): Promise<number[]> {
   const { model, processor } = await loadClip();
 
-  const base = Buffer.from(imageB64, "base64");
-  const images: Buffer[] = [];
+  const imageBuffer = Uint8Array.from(atob(imageB64), (c) => c.charCodeAt(0));
+  const blob = new Blob([imageBuffer]);
+  const image = await RawImage.fromBlob(blob);
 
-  // original
-  images.push(base);
+  const inputs = await processor(image);
 
-  // horizontal flip (TTA)
-  if (tta) {
-    const flipped = await sharp(base).flop().toBuffer(); // flop = horizontal flip
-    images.push(flipped);
-  }
+  const outputs = await model(inputs);
+  // CLIPModel returns { image_embeds, text_embeds }
+  const imageEmbeds: {
+    data: Float32Array | number[];
+  } = outputs.image_embeds;
 
-  const embeddings: number[][] = [];
-
-  for (const imgBuf of images) {
-    const inputs = await processor(imgBuf, {
-      return_tensors: "pt",
-    });
-
-    const outputs = await model(inputs);
-    // CLIPModel returns { image_embeds, text_embeds }
-    const imageEmbeds: {
-      data: Float32Array | number[];
-    } = outputs.image_embeds;
-
-    const embArr = Array.from(imageEmbeds.data);
-    const normEmb = l2Normalize(embArr);
-    embeddings.push(normEmb);
-  }
-
-  if (embeddings.length === 0) {
-    throw new Error("Failed to compute embeddings");
-  }
-
-  // average TTA embeddings
-  const dim = embeddings[0].length;
-  const avg = new Array<number>(dim).fill(0);
-
-  for (const e of embeddings) {
-    for (let i = 0; i < dim; i++) {
-      avg[i] += e[i];
-    }
-  }
-  for (let i = 0; i < dim; i++) {
-    avg[i] /= embeddings.length;
-  }
-
-  return l2Normalize(avg); // [D], L2-normalized
+  const embArr = Array.from(imageEmbeds.data);
+  return l2Normalize(embArr); // [D], L2-normalized
 }
 
 export async function encodeTextClip(texts: string[]): Promise<number[][]> {
@@ -219,46 +205,38 @@ export async function encodeTextClip(texts: string[]): Promise<number[][]> {
 }
 
 // -----------------------
-// Gemini inference (neighbors + image)
+// Gemini inference (neighbors only, no image)
 // -----------------------
 
 export async function inferDishWithGemini(
-  imageB64: string,
   neighbors: Neighbor[]
-): Promise<string> {
-  const topNeighbors = neighbors.slice(0, 8);
-  const payload = { neighbors: topNeighbors };
-  const truncatedB64 = imageB64.slice(0, 8000);
+): Promise<string | null> {
+  const contextLines = neighbors;
 
   const prompt = [
-    "You are an expert food recognition and nutrition assistant.",
-    "You are given:",
-    "1) A base64-encoded image of a single plated dish.",
-    "2) A set of nearest-neighbor dishes from a labeled dataset, including their ingredients and nutrition facts.",
-    "3) (Optional) An estimated macro profile derived from those neighbors.",
-    "",
-    "Using ONLY this information, infer a plausible guess of what the dish is.",
-    "Focus on pattern-matching the neighbors (ingredients & style), not fantasy.",
-    "",
-    "Return STRICTLY a JSON object with keys:",
-    '  - "dish_title": short human-friendly name for the dish',
-    '  - "description": 1-2 concise sentences',
-    '  - "key_ingredients": array of 3-10 important ingredients (lowercase strings)',
-    '  - "total_calories": number',
-    '  - "total_fat": number',
-    '  - "total_carbs": number',
-    '  - "total_protein": number',
-    "If uncertain, pick the most reasonable guess and keep wording honest.",
-    "Do not include any extra keys or commentary.",
-    "",
-    `Query image (base64, truncated): ${truncatedB64}`,
-    "",
-    "Neighbor context (JSON):",
-    JSON.stringify(payload, null, 2),
-  ].join("\n");
+    "You are given nearest-neighbor dishes for an input food photo. ",
+    "Using ONLY the context below, produce a best-effort JSON with keys:\n",
+    '  - "estimated_calories": number (kcal)\n',
+    '  - "estimated_fat": number\n',
+    '  - "estimated_proten": number\n',
+    '  - "estimated_carbs": number\n',
+    '  - "dish_title": string\n',
+    '  - "description": string (1-2 sentences)\n',
+    '  - "key_ingredients": array of strings (3-8 items)\n',
+    "When estimating calories, prefer neighbors with similar ingredients ",
+    "and macronutrients. If conflicting, average reasonable neighbors and ",
+    "round to a sensible whole number.\n\n",
+    `Context (top ${contextLines.length} neighbors):\n`,
+    `${JSON.stringify(contextLines, null, 2)}\n\n`,
+    "Return ONLY the JSON object, no extra text.",
+  ].join("");
 
-  const result = await gemini.generateContent(prompt);
-  const text = result.response.text();
-
-  return text; // caller can JSON.parse if desired
+  try {
+    const result = await gemini.generateContent(prompt);
+    const text = result.response.text();
+    return text || null;
+  } catch (error) {
+    console.error("[Gemini] generation failed:", error);
+    return null;
+  }
 }
