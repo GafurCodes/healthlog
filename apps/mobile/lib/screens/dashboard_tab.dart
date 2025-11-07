@@ -316,6 +316,240 @@ class _DashboardTabState extends State<DashboardTab> {
                     ),
                   ),
                 ),
+              const SizedBox(height: 16),
+              // Macros Section
+              if (profileProvider.goals != null) ...[
+                const Text(
+                  'Macronutrients',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.text,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                // Protein Card
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text(
+                              'Protein',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: AppTheme.text,
+                              ),
+                            ),
+                            Text(
+                              'Goal: ${profileProvider.goals!.protein}g',
+                              style: const TextStyle(
+                                fontSize: 14,
+                                color: AppTheme.textLight,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        if (logProvider.isLoading)
+                          const Center(
+                            child: Padding(
+                              padding: EdgeInsets.all(16.0),
+                              child: CircularProgressIndicator(),
+                            ),
+                          )
+                        else ...[
+                          Text(
+                            '${logProvider.dailyProtein}',
+                            style: const TextStyle(
+                              fontSize: 48,
+                              fontWeight: FontWeight.bold,
+                              color: AppTheme.primary,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          const Text(
+                            'g',
+                            style: TextStyle(
+                              fontSize: 18,
+                              color: AppTheme.textLight,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          _buildProgressBar(
+                            consumed: logProvider.dailyProtein,
+                            goal: profileProvider.goals!.protein,
+                            color: AppTheme.primary,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            profileProvider.goals!.protein > 0
+                                ? '${((logProvider.dailyProtein / profileProvider.goals!.protein) * 100).toStringAsFixed(1)}% of goal'
+                                : '0% of goal',
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: AppTheme.textLight,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                // Carbs Card
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text(
+                              'Carbs',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: AppTheme.text,
+                              ),
+                            ),
+                            Text(
+                              'Goal: ${profileProvider.goals!.carbs}g',
+                              style: const TextStyle(
+                                fontSize: 14,
+                                color: AppTheme.textLight,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        if (logProvider.isLoading)
+                          const Center(
+                            child: Padding(
+                              padding: EdgeInsets.all(16.0),
+                              child: CircularProgressIndicator(),
+                            ),
+                          )
+                        else ...[
+                          Text(
+                            '${logProvider.dailyCarbs}',
+                            style: const TextStyle(
+                              fontSize: 48,
+                              fontWeight: FontWeight.bold,
+                              color: AppTheme.primary,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          const Text(
+                            'g',
+                            style: TextStyle(
+                              fontSize: 18,
+                              color: AppTheme.textLight,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          _buildProgressBar(
+                            consumed: logProvider.dailyCarbs,
+                            goal: profileProvider.goals!.carbs,
+                            color: AppTheme.primary,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            profileProvider.goals!.carbs > 0
+                                ? '${((logProvider.dailyCarbs / profileProvider.goals!.carbs) * 100).toStringAsFixed(1)}% of goal'
+                                : '0% of goal',
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: AppTheme.textLight,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                // Fat Card
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text(
+                              'Fat',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: AppTheme.text,
+                              ),
+                            ),
+                            Text(
+                              'Goal: ${profileProvider.goals!.fats}g',
+                              style: const TextStyle(
+                                fontSize: 14,
+                                color: AppTheme.textLight,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        if (logProvider.isLoading)
+                          const Center(
+                            child: Padding(
+                              padding: EdgeInsets.all(16.0),
+                              child: CircularProgressIndicator(),
+                            ),
+                          )
+                        else ...[
+                          Text(
+                            '${logProvider.dailyFat}',
+                            style: const TextStyle(
+                              fontSize: 48,
+                              fontWeight: FontWeight.bold,
+                              color: AppTheme.primary,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          const Text(
+                            'g',
+                            style: TextStyle(
+                              fontSize: 18,
+                              color: AppTheme.textLight,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          _buildProgressBar(
+                            consumed: logProvider.dailyFat,
+                            goal: profileProvider.goals!.fats,
+                            color: AppTheme.primary,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            profileProvider.goals!.fats > 0
+                                ? '${((logProvider.dailyFat / profileProvider.goals!.fats) * 100).toStringAsFixed(1)}% of goal'
+                                : '0% of goal',
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: AppTheme.textLight,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ],
             const SizedBox(height: 24),
             if (logProvider.error != null)
