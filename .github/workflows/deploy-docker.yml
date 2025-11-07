@@ -55,22 +55,27 @@ jobs:
           overwrite: true
           strip_components: 0
 
-      - name: Install Docker Compose if needed
+      - name: Setup Docker permissions
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            # Check if docker compose works
-            if ! docker compose version &> /dev/null; then
+            # Add user to docker group if not already
+            if ! groups | grep -q docker; then
+              echo "Adding user to docker group..."
+              sudo usermod -aG docker $USER
+            fi
+
+            # Check if docker compose works with sudo
+            if ! sudo docker compose version &> /dev/null; then
               echo "Docker Compose not found, installing..."
 
-              # Install Docker Compose plugin
-              DOCKER_CONFIG=${DOCKER_CONFIG:-$HOME/.docker}
-              mkdir -p $DOCKER_CONFIG/cli-plugins
-              curl -SL https://github.com/docker/compose/releases/download/v2.24.5/docker-compose-linux-x86_64 -o $DOCKER_CONFIG/cli-plugins/docker-compose
-              chmod +x $DOCKER_CONFIG/cli-plugins/docker-compose
+              # Install Docker Compose plugin system-wide
+              sudo mkdir -p /usr/local/lib/docker/cli-plugins
+              sudo curl -SL https://github.com/docker/compose/releases/download/v2.24.5/docker-compose-linux-x86_64 -o /usr/local/lib/docker/cli-plugins/docker-compose
+              sudo chmod +x /usr/local/lib/docker/cli-plugins/docker-compose
 
               echo "Docker Compose installed successfully"
             else
@@ -78,7 +83,7 @@ jobs:
             fi
 
             # Verify installation
-            docker compose version
+            sudo docker compose version
 
       - name: Deploy with Docker Compose
         uses: appleboy/ssh-action@v1.0.3
@@ -89,10 +94,10 @@ jobs:
           script: |
             cd ~/healthlog
 
-            # Rebuild and restart containers
-            docker compose down
-            docker compose build --no-cache
-            docker compose up -d
+            # Rebuild and restart containers (using sudo)
+            sudo docker compose down
+            sudo docker compose build --no-cache
+            sudo docker compose up -d
 
             # Show status
-            docker compose ps
+            sudo docker compose ps
