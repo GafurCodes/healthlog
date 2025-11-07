@@ -7,13 +7,15 @@ import { Button } from '../components/Button';
 import styles from '../styles/components.module.css';
 import { handleApiError } from '../api/client';
 
+const DEFAULT_GOALS: ProfileGoals = {
+  calories: 0,
+  protein: 0,
+  carbs: 0,
+  fats: 0,
+};
+
 export const GoalsPage: React.FC = () => {
-  const [goals, setGoals] = useState<ProfileGoals>({
-    calories: 0,
-    protein: 0,
-    carbs: 0,
-    fats: 0,
-  });
+  const [goals, setGoals] = useState<ProfileGoals>(DEFAULT_GOALS);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -23,21 +25,26 @@ export const GoalsPage: React.FC = () => {
   useEffect(() => {
     const fetchGoals = async () => {
       setLoading(true);
-      setGoalsExist(true);
+      setError('');
       try {
         const res = await profileApi.get();
-        if (res.data) {
-          setGoals(res.data.goals);
-        }
-      } catch (err) {
-        const apiError = handleApiError(err);
-        if (apiError.message?.toLowerCase().includes('not found')) {
-          setGoalsExist(false);
-        } else {
-          setError(apiError.message || 'Failed to fetch goals');
-        }
+        const g = res?.data?.goals ?? {};
+        setGoals({
+          calories: Number(g.calories) || 0,
+          protein: Number(g.protein) || 0,
+          carbs: Number(g.carbs) || 0,
+          fats: Number(g.fats) || 0,
+        });
+      } catch (err: any) {
+        setGoals({
+          calories: 0,
+          protein: 0,
+          carbs: 0,
+          fats: 0,
+        });
       } finally {
         setLoading(false);
+        setGoalsExist(true);
       }
     };
 
@@ -46,7 +53,12 @@ export const GoalsPage: React.FC = () => {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setGoals((prev) => ({ ...prev, [name]: parseInt(value, 10) || 0 }));
+    if (value === '') {
+      setGoals((prev) => ({ ...prev, [name]: '' } as any));
+      return;
+    }
+    const n = Math.max(0, parseInt(value, 10) || 0);
+    setGoals((prev) => ({ ...prev, [name]: n } as ProfileGoals));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -57,7 +69,7 @@ export const GoalsPage: React.FC = () => {
     try {
       await profileApi.update(goals);
       setSuccess('Goals saved successfully!');
-      setGoalsExist(true); // Goals now exist
+      setGoalsExist(true);
     } catch (err) {
       const apiError = handleApiError(err);
       setError(apiError.message || 'Failed to save goals');
@@ -85,7 +97,7 @@ export const GoalsPage: React.FC = () => {
           <h2 style={{ margin: 0 }}>Macro Goals</h2>
         </CardHeader>
         <CardBody>
-          {!goalsExist && !loading && (
+          {!goalsExist && (
             <p className={styles['text-center']}>No goals set yet!</p>
           )}
           <form onSubmit={handleSubmit}>
@@ -130,7 +142,9 @@ export const GoalsPage: React.FC = () => {
               />
             </div>
             {error && <p className={styles['error-message']}>{error}</p>}
-            {success && <p style={{ color: 'var(--color-success)' }}>{success}</p>}
+            {success && (
+              <p style={{ color: 'var(--color-success)' }}>{success}</p>
+            )}
             <Button
               type='submit'
               disabled={saving}

@@ -1,0 +1,79 @@
+name: Deploy to DigitalOcean with Docker Compose
+
+on:
+  push:
+    branches:
+      - main
+      - feature/ci-cd
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Prepare deployment directory
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            # Backup .env files if they exist
+            if [ -f ~/healthlog/apps/api/.env ]; then
+              cp ~/healthlog/apps/api/.env /tmp/api.env.backup
+            fi
+            if [ -f ~/healthlog/apps/web/.env ]; then
+              cp ~/healthlog/apps/web/.env /tmp/web.env.backup
+            fi
+
+            # Remove old directory completely
+            rm -rf ~/healthlog
+
+            # Create fresh directory
+            mkdir -p ~/healthlog/apps/api
+            mkdir -p ~/healthlog/apps/web
+
+            # Restore .env files if they were backed up
+            if [ -f /tmp/api.env.backup ]; then
+              mv /tmp/api.env.backup ~/healthlog/apps/api/.env
+            fi
+            if [ -f /tmp/web.env.backup ]; then
+              mv /tmp/web.env.backup ~/healthlog/apps/web/.env
+            fi
+
+      - name: Copy code to droplet
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: "."
+          target: "~/healthlog"
+          overwrite: true
+          strip_components: 0
+
+      - name: Deploy with Docker Compose
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd ~/healthlog
+
+            # Stop and remove existing containers (force remove if necessary)
+            docker compose down --remove-orphans || true
+            docker rm -f healthlog-mongodb healthlog-api healthlog-web 2>/dev/null || true
+
+            # Rebuild and restart containers
+            docker compose build --no-cache
+            docker compose up -d
+
+            # Show status
+            docker compose ps
+
+            # Show recent logs
+            docker compose logs --tail=50
