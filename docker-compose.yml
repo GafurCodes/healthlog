@@ -24,6 +24,7 @@ services:
 
   api:
     build: ./apps/api
+    platform: linux/amd64
     container_name: healthlog-api
     restart: unless-stopped
     depends_on:
