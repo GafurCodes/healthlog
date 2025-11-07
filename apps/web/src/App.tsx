@@ -15,7 +15,8 @@ import { ResetPasswordPage } from './pages/ResetPasswordPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { GoalsPage } from './pages/GoalsPage';
 import { LogsPage } from './pages/LogsPage';
-import { LogFormPage } from './pages/LogFormPage';
+/*import { LogFormPage } from './pages/LogFormPage';*/
+import LogFormPage from './pages/LogFormPage';
 import { NotFoundPage } from './pages/NotFoundPage';
 
 const App: React.FC = () => {

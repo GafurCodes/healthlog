@@ -53,6 +53,10 @@ export const GoalsPage: React.FC = () => {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
+    if (value === '') {
+      setGoals((prev) => ({ ...prev, [name]: '' } as any));
+      return;
+    }
     const n = Math.max(0, parseInt(value, 10) || 0);
     setGoals((prev) => ({ ...prev, [name]: n } as ProfileGoals));
   };
