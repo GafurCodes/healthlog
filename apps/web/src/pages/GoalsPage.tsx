@@ -25,33 +25,26 @@ export const GoalsPage: React.FC = () => {
   useEffect(() => {
     const fetchGoals = async () => {
       setLoading(true);
-      setGoalsExist(true);
       setError('');
       try {
         const res = await profileApi.get();
-        const incoming = res?.data?.goals;
-        if (incoming && typeof incoming === 'object') {
-          setGoals({
-            calories: Number(incoming.calories) || 0,
-            protein: Number(incoming.protein) || 0,
-            carbs: Number(incoming.carbs) || 0,
-            fats: Number(incoming.fats) || 0,
-          });
-          setGoalsExist(true);
-        } else {
-          setGoals(DEFAULT_GOALS);
-          setGoalsExist(false);
-        }
-      } catch (err) {
-        const apiError = handleApiError(err);
-        if (apiError.message?.toLowerCase().includes('not found')) {
-          setGoals(DEFAULT_GOALS);
-          setGoalsExist(false);
-        } else {
-          setError(apiError.message || 'Failed to fetch goals');
-        }
+        const g = res?.data?.goals ?? {};
+        setGoals({
+          calories: Number(g.calories) || 0,
+          protein: Number(g.protein) || 0,
+          carbs: Number(g.carbs) || 0,
+          fats: Number(g.fats) || 0,
+        });
+      } catch (err: any) {
+        setGoals({
+          calories: 0,
+          protein: 0,
+          carbs: 0,
+          fats: 0,
+        });
       } finally {
         setLoading(false);
+        setGoalsExist(true);
       }
     };
 

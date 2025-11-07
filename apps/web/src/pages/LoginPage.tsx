@@ -42,30 +42,35 @@ export const LoginPage: React.FC = () => {
             {error && <div className={styles['error-message']}>{error}</div>}
             <form onSubmit={handleSubmit}>
               <Input
-                label="Email"
-                type="email"
+                label='Email'
+                type='email'
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
               />
               <Input
-                label="Password"
-                type="password"
+                label='Password'
+                type='password'
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
               />
-              <Button fullWidth loading={loading} type="submit" className={styles['mt-lg']}>
+              <Button
+                fullWidth
+                loading={loading}
+                type='submit'
+                className={styles['mt-lg']}
+              >
                 Login
               </Button>
             </form>
 
             <div className={styles['mt-lg']}>
               <p className={styles['text-center']}>
-                Don't have an account? <Link to="/register">Register</Link>
+                Don't have an account? <Link to='/register'>Register</Link>
               </p>
               <p className={styles['text-center']}>
-                <Link to="/forgot-password">Forgot password?</Link>
+                <Link to='/forgot-password'>Forgot password?</Link>
               </p>
             </div>
           </CardBody>
