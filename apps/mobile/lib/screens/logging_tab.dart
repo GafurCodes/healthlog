@@ -87,7 +87,10 @@ class _LoggingTabState extends State<LoggingTab> {
       // Convert image bytes to base64
       final base64Image = base64Encode(imageBytes);
 
-      final logProvider = Provider.of<HealthLogProvider>(context, listen: false);
+      final logProvider = Provider.of<HealthLogProvider>(
+        context,
+        listen: false,
+      );
 
       // Show loading indicator
       if (mounted) {
@@ -112,42 +115,97 @@ class _LoggingTabState extends State<LoggingTab> {
         );
       }
 
-      final dishInfo = await logProvider.getDishInfoFromImage(base64Image);
+      final response = await logProvider.getDishInfoFromImage(base64Image);
 
       if (mounted) {
         ScaffoldMessenger.of(context).hideCurrentSnackBar();
 
-        if (dishInfo != null) {
-          // Populate form fields with dish information
-          if (dishInfo['dish_title'] != null) {
-            _nameController.text = dishInfo['dish_title'].toString();
-          }
-          if (dishInfo['total_calories'] != null) {
-            _caloriesController.text = dishInfo['total_calories'].toString();
-          }
-          if (dishInfo['total_carbs'] != null) {
-            _carbsController.text = dishInfo['total_carbs'].toString();
-          }
-          if (dishInfo['total_protein'] != null) {
-            _proteinController.text = dishInfo['total_protein'].toString();
-          }
-          if (dishInfo['total_fat'] != null) {
-            _fatController.text = dishInfo['total_fat'].toString();
-          }
-          if (dishInfo['description'] != null) {
-            _notesController.text = dishInfo['description'].toString();
-          }
+        if (response != null && response['gemini_summary'] != null) {
+          try {
+            // Parse the gemini_summary JSON string
+            // Gemini may return JSON wrapped in markdown code blocks (```json ... ```)
+            String geminiSummary = response['gemini_summary'] as String;
 
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Dish information loaded successfully!'),
-              backgroundColor: Colors.green,
-            ),
-          );
+            // Remove markdown code blocks if present
+            geminiSummary = geminiSummary.trim();
+            if (geminiSummary.startsWith('```json')) {
+              geminiSummary = geminiSummary.substring(7); // Remove ```json
+            } else if (geminiSummary.startsWith('```')) {
+              geminiSummary = geminiSummary.substring(3); // Remove ```
+            }
+            if (geminiSummary.endsWith('```')) {
+              geminiSummary = geminiSummary.substring(
+                0,
+                geminiSummary.length - 3,
+              ); // Remove closing ```
+            }
+            geminiSummary = geminiSummary.trim();
+
+            // Parse the cleaned JSON string
+            final dishInfo = jsonDecode(geminiSummary) as Map<String, dynamic>;
+
+            // Populate form fields with dish information
+            // Map the API response fields to form fields
+            if (dishInfo['dish_title'] != null) {
+              _nameController.text = dishInfo['dish_title'].toString();
+            }
+
+            // Map estimated_calories to calories field
+            if (dishInfo['estimated_calories'] != null) {
+              final calories = dishInfo['estimated_calories'];
+              _caloriesController.text = (calories is num)
+                  ? calories.round().toString()
+                  : calories.toString();
+            }
+
+            // Map estimated_carbs to carbs field
+            if (dishInfo['estimated_carbs'] != null) {
+              final carbs = dishInfo['estimated_carbs'];
+              _carbsController.text = (carbs is num)
+                  ? carbs.round().toString()
+                  : carbs.toString();
+            }
+
+            // Map estimated_proten (note the typo in API) to protein field
+            if (dishInfo['estimated_proten'] != null) {
+              final protein = dishInfo['estimated_proten'];
+              _proteinController.text = (protein is num)
+                  ? protein.round().toString()
+                  : protein.toString();
+            }
+
+            // Map estimated_fat to fat field
+            if (dishInfo['estimated_fat'] != null) {
+              final fat = dishInfo['estimated_fat'];
+              _fatController.text = (fat is num)
+                  ? fat.round().toString()
+                  : fat.toString();
+            }
+
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Dish information loaded successfully!'),
+                backgroundColor: Colors.green,
+              ),
+            );
+          } catch (e) {
+            // If parsing fails, show error but don't crash
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  'Could not parse dish information. Please try again or enter details manually.',
+                ),
+                backgroundColor: Colors.orange,
+                duration: const Duration(seconds: 4),
+              ),
+            );
+          }
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Could not identify dish from image. Please enter details manually.'),
+              content: Text(
+                'Could not identify dish from image. Please enter details manually.',
+              ),
               backgroundColor: Colors.orange,
             ),
           );
@@ -158,9 +216,7 @@ class _LoggingTabState extends State<LoggingTab> {
         ScaffoldMessenger.of(context).hideCurrentSnackBar();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              'Failed to process image: ${e.toString()}',
-            ),
+            content: Text('Failed to process image: ${e.toString()}'),
             backgroundColor: AppTheme.danger,
           ),
         );
@@ -289,10 +345,7 @@ class _LoggingTabState extends State<LoggingTab> {
               _selectedLogType == LogType.meal
                   ? 'Log your meal and calories consumed'
                   : 'Log your workout and calories burned',
-              style: const TextStyle(
-                fontSize: 16,
-                color: AppTheme.textLight,
-              ),
+              style: const TextStyle(fontSize: 16, color: AppTheme.textLight),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 24),
@@ -532,8 +585,7 @@ class _LoggingTabState extends State<LoggingTab> {
                       width: 20,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        valueColor:
-                            AlwaysStoppedAnimation<Color>(Colors.white),
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                       ),
                     )
                   : Text(
@@ -561,4 +613,3 @@ class _LoggingTabState extends State<LoggingTab> {
     );
   }
 }
-
