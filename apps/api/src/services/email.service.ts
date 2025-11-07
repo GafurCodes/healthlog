@@ -1,20 +1,12 @@
-import nodemailer from "nodemailer";
+import sgMail from "@sendgrid/mail";
 import { getEnv } from "../config/env.js";
-
-let transporter: nodemailer.Transporter;
 
 export function initializeEmailService(): void {
   const env = getEnv();
 
-  transporter = nodemailer.createTransport({
-    host: env.SMTP_HOST,
-    port: env.SMTP_PORT,
-    secure: env.SMTP_PORT === 465,
-    auth: {
-      user: env.SMTP_USER,
-      pass: env.SMTP_PASSWORD,
-    },
-  });
+  sgMail.setApiKey(env.SENDGRID_API_KEY);
+
+  console.log('SendGrid email service initialized');
 }
 
 export async function sendVerificationEmail(
@@ -27,7 +19,7 @@ export async function sendVerificationEmail(
   const verificationUrl = `${env.APP_BASE_URL}/verify-email?token=${token}`;
 
   try {
-    await transporter.sendMail({
+    await sgMail.send({
       from: env.EMAIL_FROM,
       to,
       subject: "Verify your Nibble account",
@@ -59,7 +51,7 @@ export async function sendPasswordResetEmail(
   const resetUrl = `${env.APP_BASE_URL}/reset-password?token=${token}`;
 
   try {
-    await transporter.sendMail({
+    await sgMail.send({
       from: env.EMAIL_FROM,
       to,
       subject: "Reset your Nibble password",
