@@ -1,9 +1,11 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import '../providers/health_log_provider.dart';
+import '../services/api_service.dart';
 import '../theme/app_theme.dart';
 
 enum LogType { meal, workout }
@@ -27,9 +29,15 @@ class _LoggingTabState extends State<LoggingTab> {
   final _fatController = TextEditingController();
   final _durationController = TextEditingController();
   final _notesController = TextEditingController();
+  final _foodSearchController = TextEditingController();
+  bool _isSearchingFood = false;
+  List<Map<String, dynamic>> _foodSuggestions = [];
+  bool _isLoadingSuggestions = false;
+  Timer? _debounceTimer;
 
   @override
   void dispose() {
+    _debounceTimer?.cancel();
     _caloriesController.dispose();
     _nameController.dispose();
     _carbsController.dispose();
@@ -37,6 +45,7 @@ class _LoggingTabState extends State<LoggingTab> {
     _fatController.dispose();
     _durationController.dispose();
     _notesController.dispose();
+    _foodSearchController.dispose();
     super.dispose();
   }
 
@@ -51,6 +60,119 @@ class _LoggingTabState extends State<LoggingTab> {
     _fatController.clear();
     _durationController.clear();
     _notesController.clear();
+    _foodSearchController.clear();
+  }
+
+  Future<void> _loadFoodSuggestions(String query) async {
+    if (query.trim().isEmpty || query.length < 2) {
+      setState(() {
+        _foodSuggestions = [];
+      });
+      return;
+    }
+
+    setState(() {
+      _isLoadingSuggestions = true;
+    });
+
+    try {
+      final suggestions = await ApiService.autocompleteFood(query);
+      if (mounted) {
+        setState(() {
+          _foodSuggestions = suggestions;
+          _isLoadingSuggestions = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _foodSuggestions = [];
+          _isLoadingSuggestions = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _searchFood(String foodName) async {
+    if (foodName.trim().isEmpty) {
+      return;
+    }
+
+    setState(() {
+      _isSearchingFood = true;
+      _foodSearchController.text = foodName;
+    });
+
+    try {
+      final foodData = await ApiService.searchFood(foodName);
+
+      if (mounted) {
+        setState(() {
+          _isSearchingFood = false;
+        });
+
+        if (foodData != null) {
+          // Populate form fields with search results
+          if (foodData['name'] != null) {
+            _nameController.text = foodData['name'].toString();
+          }
+
+          if (foodData['calories'] != null) {
+            final calories = foodData['calories'];
+            _caloriesController.text = (calories is num)
+                ? calories.round().toString()
+                : calories.toString();
+          }
+
+          if (foodData['protein'] != null) {
+            final protein = foodData['protein'];
+            _proteinController.text = (protein is num)
+                ? protein.round().toString()
+                : protein.toString();
+          }
+
+          if (foodData['carbs'] != null) {
+            final carbs = foodData['carbs'];
+            _carbsController.text = (carbs is num)
+                ? carbs.round().toString()
+                : carbs.toString();
+          }
+
+          if (foodData['fat'] != null) {
+            final fat = foodData['fat'];
+            _fatController.text = (fat is num)
+                ? fat.round().toString()
+                : fat.toString();
+          }
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Food information loaded successfully!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Food not found. Please try a different search term.'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isSearchingFood = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to search food: ${e.toString()}'),
+            backgroundColor: AppTheme.danger,
+          ),
+        );
+      }
+    }
   }
 
   Future<void> _pickImage(ImageSource source) async {
@@ -349,6 +471,146 @@ class _LoggingTabState extends State<LoggingTab> {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 24),
+            // Food search section (only for meals)
+            if (_selectedLogType == LogType.meal) ...[
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      const Text(
+                        'Search for Food',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: AppTheme.text,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Autocomplete<String>(
+                        optionsBuilder: (TextEditingValue textEditingValue) {
+                          final query = textEditingValue.text;
+                          if (query.length < 2) {
+                            _debounceTimer?.cancel();
+                            setState(() {
+                              _foodSuggestions = [];
+                            });
+                            return const Iterable<String>.empty();
+                          }
+                          
+                          // Debounce the API call
+                          _debounceTimer?.cancel();
+                          _debounceTimer = Timer(const Duration(milliseconds: 300), () {
+                            _loadFoodSuggestions(query);
+                          });
+                          
+                          return _foodSuggestions
+                              .map((suggestion) => suggestion['name']?.toString() ?? '')
+                              .where((name) => name.isNotEmpty);
+                        },
+                        onSelected: (String selection) {
+                          _searchFood(selection);
+                        },
+                        fieldViewBuilder: (
+                          BuildContext context,
+                          TextEditingController textEditingController,
+                          FocusNode focusNode,
+                          VoidCallback onFieldSubmitted,
+                        ) {
+                          // Sync controllers
+                          WidgetsBinding.instance.addPostFrameCallback((_) {
+                            if (textEditingController.text != _foodSearchController.text) {
+                              textEditingController.text = _foodSearchController.text;
+                            }
+                          });
+                          
+                          return TextFormField(
+                            controller: textEditingController,
+                            focusNode: focusNode,
+                            decoration: InputDecoration(
+                              labelText: 'Search food name',
+                              hintText: 'e.g., Apple, Chicken Breast',
+                              prefixIcon: _isSearchingFood
+                                  ? const SizedBox(
+                                      width: 20,
+                                      height: 20,
+                                      child: Padding(
+                                        padding: EdgeInsets.all(12.0),
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                        ),
+                                      ),
+                                    )
+                                  : const Icon(Icons.search),
+                            ),
+                            onChanged: (value) {
+                              _foodSearchController.text = value;
+                            },
+                            onFieldSubmitted: (String value) {
+                              onFieldSubmitted();
+                              if (value.trim().isNotEmpty) {
+                                _searchFood(value);
+                              }
+                            },
+                          );
+                        },
+                        optionsViewBuilder: (
+                          BuildContext context,
+                          AutocompleteOnSelected<String> onSelected,
+                          Iterable<String> options,
+                        ) {
+                          return Align(
+                            alignment: Alignment.topLeft,
+                            child: Material(
+                              elevation: 4.0,
+                              borderRadius: BorderRadius.circular(8),
+                              child: ConstrainedBox(
+                                constraints: const BoxConstraints(maxHeight: 200),
+                                child: _isLoadingSuggestions
+                                    ? const Padding(
+                                        padding: EdgeInsets.all(16.0),
+                                        child: Center(
+                                          child: CircularProgressIndicator(),
+                                        ),
+                                      )
+                                    : options.isEmpty
+                                        ? const Padding(
+                                            padding: EdgeInsets.all(16.0),
+                                            child: Text('No suggestions found'),
+                                          )
+                                        : ListView.builder(
+                                            shrinkWrap: true,
+                                            itemCount: options.length,
+                                            itemBuilder: (BuildContext context, int index) {
+                                              final foodName = options.elementAt(index);
+                                              return InkWell(
+                                                onTap: () {
+                                                  onSelected(foodName);
+                                                },
+                                                child: Padding(
+                                                  padding: const EdgeInsets.all(16.0),
+                                                  child: Text(
+                                                    foodName,
+                                                    style: const TextStyle(
+                                                      fontSize: 16,
+                                                    ),
+                                                  ),
+                                                ),
+                                              );
+                                            },
+                                          ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+            ],
             // Image upload section (only for meals)
             if (_selectedLogType == LogType.meal) ...[
               Card(
