@@ -13,10 +13,7 @@ const envSchema = z.object({
   CORS_ORIGIN: z.string().default('*'),
 
   EMAIL_FROM: z.string().email('Invalid EMAIL_FROM address'),
-  SMTP_HOST: z.string(),
-  SMTP_PORT: z.coerce.number().default(587),
-  SMTP_USER: z.string(),
-  SMTP_PASSWORD: z.string(),
+  SENDGRID_API_KEY: z.string().min(1, 'SENDGRID_API_KEY is required'),
 
   APP_BASE_URL: z.string().url('Invalid APP_BASE_URL'),
   API_BASE_URL: z.string().url('Invalid API_BASE_URL'),

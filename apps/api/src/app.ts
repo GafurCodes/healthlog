@@ -13,6 +13,9 @@ export function createApp(): express.Application {
   const app = express();
   const env = getEnv();
 
+  // Trust proxy - required when running behind reverse proxy (nginx, load balancer, etc.)
+  app.set('trust proxy', true);
+
   app.use(helmet());
 
   // Parse CORS_ORIGIN to handle multiple origins
