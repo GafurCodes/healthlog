@@ -46,6 +46,11 @@ export const RegisterPage: React.FC = () => {
       return;
     }
 
+    if (!/[A-Z]/.test(password)) {
+      setError('Password must contain at least one uppercase letter');
+      return;
+    }
+    
     setLoading(true);
 
     try {
