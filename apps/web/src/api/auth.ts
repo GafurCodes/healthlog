@@ -23,6 +23,9 @@ export const authApi = {
       newPassword,
     }),
 
+  updateAccount: (name: string) =>
+    apiClient.patch<{ message: string; user: User }>('/auth/me', { name }),
+
   refresh: (refreshToken: string) =>
     apiClient.post<AuthResponse>('/auth/refresh', { refreshToken }),
 

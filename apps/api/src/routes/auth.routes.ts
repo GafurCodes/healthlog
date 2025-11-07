@@ -19,6 +19,8 @@ router.post('/reset-password', authLimiter, authController.resetPassword);
 
 router.post('/change-password', authLimiter, requireAuth, authController.changePassword);
 
+router.patch('/me', authLimiter, requireAuth, authController.updateAccount);
+
 router.post('/refresh', authController.refreshToken);
 
 export default router;

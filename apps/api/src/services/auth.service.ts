@@ -5,12 +5,13 @@ import { AppError } from '../utils/errors.js';
 import { generateTokens, verifyRefreshToken } from '../utils/jwt.js';
 import { generateToken, getTokenExpirationDate, hashToken } from '../utils/tokens.js';
 import {
-    ChangePasswordInput,
-    ForgotPasswordInput,
-    LoginInput,
-    RegisterInput,
-    ResendVerificationEmailInput,
-    ResetPasswordInput,
+  ChangePasswordInput,
+  ForgotPasswordInput,
+  LoginInput,
+  RegisterInput,
+  ResendVerificationEmailInput,
+  ResetPasswordInput,
+  UpdateAccountInput,
 } from '../utils/validation.js';
 import { sendPasswordResetEmail, sendVerificationEmail } from './email.service.js';
 
@@ -219,6 +220,32 @@ export async function changePassword(
   await user.save();
 
   return { message: 'Password updated successfully.' };
+}
+
+export async function updateAccount(
+  userId: string,
+  data: UpdateAccountInput
+): Promise<{ message: string; user: AuthResponse['user'] }> {
+  const { name } = data;
+
+  const user = await User.findById(userId);
+
+  if (!user) {
+    throw new AppError('User not found', 404);
+  }
+
+  user.name = name;
+  await user.save();
+
+  return {
+    message: 'Account details updated successfully.',
+    user: {
+      id: (user._id as Types.ObjectId).toString(),
+      email: user.email,
+      name: user.name,
+      emailVerified: user.emailVerified,
+    },
+  };
 }
 
 export async function refreshAccessToken(refreshToken: string): Promise<AuthResponse> {

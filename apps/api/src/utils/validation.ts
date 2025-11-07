@@ -48,6 +48,14 @@ export const changePasswordSchema = z.object({
     .regex(/[0-9]/, 'Password must contain at least one number'),
 });
 
+export const updateAccountSchema = z.object({
+  name: z.string().min(2, 'Name must be at least 2 characters'),
+});
+
+export const updateProfileSchema = z.object({
+  name: z.string().min(2, 'Name must be at least 2 characters'),
+});
+
 export const refreshTokenSchema = z.object({
   refreshToken: z.string().min(1, 'Refresh token is required'),
 });
@@ -143,6 +151,8 @@ export type ResendVerificationEmailInput = z.infer<typeof resendVerificationEmai
 export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
 export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
 export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;
+export type UpdateAccountInput = z.infer<typeof updateAccountSchema>;
+export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
 export type RefreshTokenInput = z.infer<typeof refreshTokenSchema>;
 export type CreateLogInput = z.infer<typeof createLogSchema>;
 export type UpdateLogInput = z.infer<typeof updateLogSchema>;
