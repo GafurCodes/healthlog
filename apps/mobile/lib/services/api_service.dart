@@ -411,6 +411,44 @@ class ApiService {
       );
     }
   }
+
+  // Food search endpoints
+  static Future<Map<String, dynamic>?> searchFood(String query) async {
+    final response = await _request('POST', '/food/search', body: {'query': query});
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      // API returns null if not found, or an object with nutrition data
+      if (data == null) {
+        return null;
+      }
+      return data as Map<String, dynamic>;
+    } else {
+      final error = jsonDecode(response.body);
+      throw ApiException(
+        message: error['message'] ?? 'Failed to search food',
+        statusCode: response.statusCode,
+      );
+    }
+  }
+
+  static Future<List<Map<String, dynamic>>> autocompleteFood(String query) async {
+    final response = await _request('POST', '/food/autocomplete', body: {'query': query});
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      if (data is List) {
+        return List<Map<String, dynamic>>.from(data);
+      }
+      return [];
+    } else {
+      final error = jsonDecode(response.body);
+      throw ApiException(
+        message: error['message'] ?? 'Failed to fetch food suggestions',
+        statusCode: response.statusCode,
+      );
+    }
+  }
 }
 
 class ApiException implements Exception {
