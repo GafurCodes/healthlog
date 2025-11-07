@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { LogsQuery } from '../api/logs';
 import { logsApi } from '../api/logs';
@@ -25,7 +25,17 @@ export const LogsPage: React.FC = () => {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [goals, setGoals] = useState<ProfileGoals | null>(null);
-  const [todaysMacros, setTodaysMacros] = useState<Partial<MealLog>>({ calories: 0, protein: 0, carbs: 0, fat: 0 });
+  const [todaysMacros, setTodaysMacros] = useState<{
+    calories: number;
+    protein: number;
+    carbs: number;
+    fat: number;
+  }>({
+    calories: 0,
+    protein: 0,
+    carbs: 0,
+    fat: 0,
+  });
 
   const loadLogs = async () => {
     setLoading(true);
@@ -54,28 +64,47 @@ export const LogsPage: React.FC = () => {
   const loadGoalsAndTodaysMacros = async () => {
     try {
       const goalsRes = await profileApi.get();
-      if (goalsRes.data) {
-        setGoals(goalsRes.data.goals);
-      }
+      const g = goalsRes?.data?.goals || {};
+      setGoals({
+        calories: Number(g.calories) || 0,
+        protein: Number(g.protein) || 0,
+        carbs: Number(g.carbs) || 0,
+        fats: Number(g.fats) || 0,
+      });
 
       const today = format(new Date(), 'yyyy-MM-dd');
-      const todaysLogsRes = await logsApi.list({ type: 'meal', startDate: today, endDate: today, pageSize: 100 });
-      const todaysMealLogs = todaysLogsRes.data.data as (Log & { metrics: MealLog })[] | undefined;
+      const todaysLogsRes = await logsApi.list({
+        type: 'meal',
+        startDate: today,
+        endDate: today,
+        pageSize: 100,
+      });
+      const todaysMealLogs = todaysLogsRes?.data?.data as
+        | (Log & { metrics: MealLog })[]
+        | undefined;
 
-      if (todaysMealLogs) {
-        const macros = todaysMealLogs.reduce((acc, log) => {
-          return {
-            calories: acc.calories + (log.metrics.calories || 0),
-            protein: acc.protein + (log.metrics.protein || 0),
-            carbs: acc.carbs + (log.metrics.carbs || 0),
-            fat: acc.fat + (log.metrics.fat || 0),
-          };
-        }, { calories: 0, protein: 0, carbs: 0, fat: 0 });
-        setTodaysMacros(macros as any);
+      if (todaysMealLogs && todaysMealLogs.length > 0) {
+        const macros = todaysMealLogs.reduce(
+          (acc, log) => ({
+            calories:
+              acc.calories + (Number((log as any).metrics?.calories) || 0),
+            protein: acc.protein + (Number((log as any).metrics?.protein) || 0),
+            carbs: acc.carbs + (Number((log as any).metrics?.carbs) || 0),
+            fat: acc.fat + (Number((log as any).metrics?.fat) || 0),
+          }),
+          { calories: 0, protein: 0, carbs: 0, fat: 0 }
+        );
+        setTodaysMacros({
+          calories: Number(macros.calories) || 0,
+          protein: Number(macros.protein) || 0,
+          carbs: Number(macros.carbs) || 0,
+          fat: Number(macros.fat) || 0,
+        });
+      } else {
+        setTodaysMacros({ calories: 0, protein: 0, carbs: 0, fat: 0 });
       }
-
-    } catch (err) {
-      // Ignore errors, as goals might not be set
+    } catch {
+      setTodaysMacros({ calories: 0, protein: 0, carbs: 0, fat: 0 });
     }
   };
 
@@ -93,7 +122,7 @@ export const LogsPage: React.FC = () => {
       await logsApi.delete(id);
       setLogs((prev) => prev.filter((l) => l.id !== id));
       setDeleteConfirm(null);
-      loadGoalsAndTodaysMacros(); // Recalculate macros after deleting a log
+      loadGoalsAndTodaysMacros();
     } catch (err) {
       const apiError = handleApiError(err);
       setError(apiError.message || '');
@@ -129,6 +158,37 @@ export const LogsPage: React.FC = () => {
     return 'Log';
   };
 
+  const resolvedMax = useMemo(() => {
+    const vCal = Number(todaysMacros.calories) || 0;
+    const vPro = Number(todaysMacros.protein) || 0;
+    const vCarb = Number(todaysMacros.carbs) || 0;
+    const vFat = Number(todaysMacros.fat) || 0;
+
+    const gCal = Number(goals?.calories) || 0;
+    const gPro = Number(goals?.protein) || 0;
+    const gCarb = Number(goals?.carbs) || 0;
+    const gFat = Number(goals?.fats) || 0;
+
+    return {
+      calories: gCal > 0 ? gCal : vCal,
+      protein: gPro > 0 ? gPro : vPro,
+      carbs: gCarb > 0 ? gCarb : vCarb,
+      fat: gFat > 0 ? gFat : vFat,
+    };
+  }, [goals, todaysMacros]);
+
+  const colorFor = (
+    value: number,
+    max: number
+  ): 'blue' | 'yellow' | 'green' | 'red' => {
+    if (max <= 0) return 'blue';
+    const pct = (value / max) * 100;
+    if (pct < 50) return 'red';
+    if (pct < 90) return 'yellow';
+    if (pct <= 110) return 'green';
+    return 'blue';
+  };
+
   return (
     <div className={styles.container}>
       <div
@@ -145,19 +205,49 @@ export const LogsPage: React.FC = () => {
         </Link>
       </div>
 
-      {goals && (
-        <Card style={{ marginBottom: '2rem' }}>
-          <CardHeader>
-            <h3 style={{ margin: 0 }}>Today's Progress</h3>
-          </CardHeader>
-          <CardBody>
-            <ProgressBar label="Calories" value={todaysMacros.calories || 0} max={goals.calories} color="yellow" />
-            <ProgressBar label="Protein" value={todaysMacros.protein || 0} max={goals.protein} color="red" />
-            <ProgressBar label="Carbs" value={todaysMacros.carbs || 0} max={goals.carbs} color="blue" />
-            <ProgressBar label="Fat" value={todaysMacros.fat || 0} max={goals.fats} color="green" />
-          </CardBody>
-        </Card>
-      )}
+      <Card style={{ marginBottom: '2rem' }}>
+        <CardHeader>
+          <h3 style={{ margin: 0 }}>Today's Progress</h3>
+        </CardHeader>
+        <CardBody>
+          <ProgressBar
+            label='Calories'
+            value={Number(todaysMacros.calories) || 0}
+            max={resolvedMax.calories || 1}
+            color={colorFor(
+              Number(todaysMacros.calories) || 0,
+              resolvedMax.calories || 1
+            )}
+          />
+          <ProgressBar
+            label='Protein'
+            value={Number(todaysMacros.protein) || 0}
+            max={resolvedMax.protein || 1}
+            color={colorFor(
+              Number(todaysMacros.protein) || 0,
+              resolvedMax.protein || 1
+            )}
+          />
+          <ProgressBar
+            label='Carbs'
+            value={Number(todaysMacros.carbs) || 0}
+            max={resolvedMax.carbs || 1}
+            color={colorFor(
+              Number(todaysMacros.carbs) || 0,
+              resolvedMax.carbs || 1
+            )}
+          />
+          <ProgressBar
+            label='Fat'
+            value={Number(todaysMacros.fat) || 0}
+            max={resolvedMax.fat || 1}
+            color={colorFor(
+              Number(todaysMacros.fat) || 0,
+              resolvedMax.fat || 1
+            )}
+          />
+        </CardBody>
+      </Card>
 
       <Card style={{ marginBottom: '2rem' }}>
         <CardHeader>
