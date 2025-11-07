@@ -13,7 +13,7 @@ import { VerifyEmailPage } from './pages/VerifyEmailPage';
 import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
 import { ResetPasswordPage } from './pages/ResetPasswordPage';
 import { DashboardPage } from './pages/DashboardPage';
-import { GoalsPage } from './pages/GoalsPage';
+import GoalsPage from './pages/GoalsPage';
 import { LogsPage } from './pages/LogsPage';
 /*import { LogFormPage } from './pages/LogFormPage';*/
 import LogFormPage from './pages/LogFormPage';
