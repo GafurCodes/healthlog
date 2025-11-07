@@ -316,6 +316,58 @@ class ApiService {
       );
     }
   }
+
+  // Profile endpoints
+  static Future<Map<String, dynamic>> getProfile() async {
+    final response = await _request('GET', '/profile');
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else if (response.statusCode == 404) {
+      // Profile not found is a valid state, return empty data
+      return {'data': null};
+    } else {
+      final error = jsonDecode(response.body);
+      throw ApiException(
+        message: error['message'] ?? 'Failed to fetch profile',
+        statusCode: response.statusCode,
+      );
+    }
+  }
+
+  static Future<Map<String, dynamic>> updateProfile({
+    required Map<String, dynamic> goals,
+  }) async {
+    final response = await _request(
+      'PUT',
+      '/profile',
+      body: {'goals': goals},
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      final error = jsonDecode(response.body);
+      throw ApiException(
+        message: error['message'] ?? 'Failed to update profile',
+        statusCode: response.statusCode,
+      );
+    }
+  }
+
+  static Future<Map<String, dynamic>> deleteProfile() async {
+    final response = await _request('DELETE', '/profile');
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      final error = jsonDecode(response.body);
+      throw ApiException(
+        message: error['message'] ?? 'Failed to delete profile',
+        statusCode: response.statusCode,
+      );
+    }
+  }
 }
 
 class ApiException implements Exception {

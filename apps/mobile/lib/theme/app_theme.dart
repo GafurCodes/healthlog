@@ -6,6 +6,7 @@ class AppTheme {
   static const Color primaryDark = Color(0xFF1E40AF); // #1e40af
   static const Color danger = Color(0xFFEF4444); // #ef4444
   static const Color dangerDark = Color(0xFFDC2626); // #dc2626
+  static const Color success = Color(0xFF10B981); // #10b981
   static const Color text = Color(0xFF1F2937); // #1f2937
   static const Color textLight = Color(0xFF6B7280); // #6b7280
   static const Color bg = Color(0xFFFFFFFF); // #ffffff

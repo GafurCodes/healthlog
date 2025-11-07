@@ -7,6 +7,7 @@ import 'verify_email_screen.dart';
 import 'dashboard_tab.dart';
 import 'log_list_tab.dart';
 import 'logging_tab.dart';
+import 'profile_tab.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -85,7 +86,18 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       body: IndexedStack(
         index: _currentIndex,
-        children: const [DashboardTab(), LoggingTab(), LogListTab()],
+        children: [
+          DashboardTab(
+            onNavigateToProfile: () {
+              setState(() {
+                _currentIndex = 3;
+              });
+            },
+          ),
+          const LoggingTab(),
+          const LogListTab(),
+          const ProfileTab(),
+        ],
       ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
@@ -94,6 +106,7 @@ class _HomeScreenState extends State<HomeScreen> {
             _currentIndex = index;
           });
         },
+        type: BottomNavigationBarType.fixed,
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.dashboard),
@@ -101,6 +114,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           BottomNavigationBarItem(icon: Icon(Icons.add_circle), label: 'Log'),
           BottomNavigationBarItem(icon: Icon(Icons.list), label: 'Logs'),
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
         ],
       ),
     );
