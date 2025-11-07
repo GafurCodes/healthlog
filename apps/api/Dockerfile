@@ -1,23 +1,31 @@
-FROM node:20-alpine AS builder
+FROM node:20-slim AS builder
 WORKDIR /app
 
-COPY package*.json ./
-RUN npm ci
+# Install build tools needed for native modules like sharp
+RUN apt-get update && apt-get install -y build-essential
+
+COPY package.json ./
+# Remove lock file to ensure fresh dependency resolution for the target platform
+RUN rm -f package-lock.json
+RUN npm install
 
 COPY tsconfig.json ./
 COPY src ./src
 RUN npm run build
 
-FROM node:20-alpine
+FROM node:20-slim
 WORKDIR /app
-RUN apk add --no-cache dumb-init
+RUN apt-get update && apt-get install -y dumb-init && rm -rf /var/lib/apt/lists/*
 
-COPY package*.json ./
-RUN npm ci --omit=dev
+COPY package.json ./
+# Remove lock file to ensure fresh dependency resolution for the target platform
+RUN rm -f package-lock.json
+# Using npm install for production dependencies
+RUN npm install --omit=dev
 
 COPY --from=builder /app/dist ./dist
-RUN addgroup -g 1001 -S nodejs && \
-    adduser -S nodejs -u 1001
+RUN addgroup --system --gid 1001 nodejs && \
+    adduser --system --uid 1001 nodejs
 
 USER nodejs
 EXPOSE 4000
