@@ -204,5 +204,65 @@ class HealthLogProvider with ChangeNotifier {
       notifyListeners();
     }
   }
+
+  Future<void> updateLog({
+    required String id,
+    String? type,
+    Map<String, dynamic>? metrics,
+    String? notes,
+    DateTime? date,
+  }) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      await ApiService.updateLog(
+        id: id,
+        type: type,
+        metrics: metrics,
+        notes: notes,
+        date: date,
+      );
+
+      // Refresh logs and daily calories
+      await Future.wait([
+        fetchLogs(),
+        fetchDailyCalories(),
+      ]);
+    } catch (e) {
+      _error = e.toString();
+      rethrow;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> deleteLog(String id) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      await ApiService.deleteLog(id);
+
+      // Remove from local list immediately for better UX
+      _logs.removeWhere((log) => log.id == id);
+      notifyListeners();
+
+      // Refresh logs and daily calories
+      await Future.wait([
+        fetchLogs(),
+        fetchDailyCalories(),
+      ]);
+    } catch (e) {
+      _error = e.toString();
+      rethrow;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
 }
 
