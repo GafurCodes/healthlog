@@ -55,36 +55,6 @@ jobs:
           overwrite: true
           strip_components: 0
 
-      - name: Setup Docker permissions
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
-            # Add user to docker group if not already
-            if ! groups | grep -q docker; then
-              echo "Adding user to docker group..."
-              sudo usermod -aG docker $USER
-            fi
-
-            # Check if docker compose works with sudo
-            if ! sudo docker compose version &> /dev/null; then
-              echo "Docker Compose not found, installing..."
-
-              # Install Docker Compose plugin system-wide
-              sudo mkdir -p /usr/local/lib/docker/cli-plugins
-              sudo curl -SL https://github.com/docker/compose/releases/download/v2.24.5/docker-compose-linux-x86_64 -o /usr/local/lib/docker/cli-plugins/docker-compose
-              sudo chmod +x /usr/local/lib/docker/cli-plugins/docker-compose
-
-              echo "Docker Compose installed successfully"
-            else
-              echo "Docker Compose already installed"
-            fi
-
-            # Verify installation
-            sudo docker compose version
-
       - name: Deploy with Docker Compose
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -94,10 +64,16 @@ jobs:
           script: |
             cd ~/healthlog
 
-            # Rebuild and restart containers (using sudo)
-            sudo docker compose down
-            sudo docker compose build --no-cache
-            sudo docker compose up -d
+            # Stop and remove existing containers (force remove if necessary)
+            docker compose down --remove-orphans || true
+            docker rm -f healthlog-mongodb healthlog-api healthlog-web 2>/dev/null || true
+
+            # Rebuild and restart containers
+            docker compose build --no-cache
+            docker compose up -d
 
             # Show status
-            sudo docker compose ps
+            docker compose ps
+
+            # Show recent logs
+            docker compose logs --tail=50
