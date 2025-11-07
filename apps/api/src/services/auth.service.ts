@@ -1,16 +1,18 @@
 import argon2 from 'argon2';
 import { Types } from 'mongoose';
-import { User, IUser } from '../models/User.js';
+import { User } from '../models/User.js';
+import { AppError } from '../utils/errors.js';
 import { generateTokens, verifyRefreshToken } from '../utils/jwt.js';
-import { generateToken, hashToken, getTokenExpirationDate } from '../utils/tokens.js';
-import { sendVerificationEmail, sendPasswordResetEmail } from './email.service.js';
+import { generateToken, getTokenExpirationDate, hashToken } from '../utils/tokens.js';
 import {
-  RegisterInput,
-  LoginInput,
-  ForgotPasswordInput,
-  ResetPasswordInput,
-  ResendVerificationEmailInput,
+    ChangePasswordInput,
+    ForgotPasswordInput,
+    LoginInput,
+    RegisterInput,
+    ResendVerificationEmailInput,
+    ResetPasswordInput,
 } from '../utils/validation.js';
+import { sendPasswordResetEmail, sendVerificationEmail } from './email.service.js';
 
 export interface AuthResponse {
   user: {
@@ -186,6 +188,37 @@ export async function resetPassword(data: ResetPasswordInput): Promise<{ message
   await user.save();
 
   return { message: 'Password reset successful. You can now log in with your new password.' };
+}
+
+export async function changePassword(
+  userId: string,
+  data: ChangePasswordInput
+): Promise<{ message: string }> {
+  const { currentPassword, newPassword } = data;
+
+  const user = await User.findById(userId);
+
+  if (!user) {
+    throw new AppError('User not found', 404);
+  }
+
+  const isCurrentPasswordValid = await argon2.verify(user.password, currentPassword);
+
+  if (!isCurrentPasswordValid) {
+    throw new AppError('Current password is incorrect', 400);
+  }
+
+  const isSamePassword = await argon2.verify(user.password, newPassword);
+
+  if (isSamePassword) {
+    throw new AppError('New password must be different from the current password', 400);
+  }
+
+  const hashedPassword = await argon2.hash(newPassword);
+  user.password = hashedPassword;
+  await user.save();
+
+  return { message: 'Password updated successfully.' };
 }
 
 export async function refreshAccessToken(refreshToken: string): Promise<AuthResponse> {

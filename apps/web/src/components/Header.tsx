@@ -15,6 +15,10 @@ export const Header: React.FC = () => {
     navigate("/login");
   };
 
+  const handleSettings = () => {
+    navigate("/settings");
+  };
+
   return (
     <header className={styles.header}>
       <div className={styles["header-container"]}>
@@ -34,6 +38,9 @@ export const Header: React.FC = () => {
               <span className={styles["header-user"]}>Hi, {user?.name}</span>
               <Button variant="secondary" onClick={toggleTheme}>
                 {theme === "light" ? "🌙" : "☀️"}
+              </Button>
+              <Button variant="secondary" onClick={handleSettings}>
+                Settings
               </Button>
               <Button variant="secondary" onClick={handleLogout}>
                 Logout
