@@ -6,12 +6,18 @@ class HealthLogProvider with ChangeNotifier {
   List<HealthLog> _logs = [];
   int _dailyCaloriesConsumed = 0;
   int _dailyCaloriesBurned = 0;
+  int _dailyProtein = 0;
+  int _dailyCarbs = 0;
+  int _dailyFat = 0;
   bool _isLoading = false;
   String? _error;
 
   List<HealthLog> get logs => _logs;
   int get dailyCaloriesConsumed => _dailyCaloriesConsumed;
   int get dailyCaloriesBurned => _dailyCaloriesBurned;
+  int get dailyProtein => _dailyProtein;
+  int get dailyCarbs => _dailyCarbs;
+  int get dailyFat => _dailyFat;
   bool get isLoading => _isLoading;
   String? get error => _error;
 
@@ -76,6 +82,9 @@ class HealthLogProvider with ChangeNotifier {
       );
 
       _dailyCaloriesConsumed = response['caloriesConsumed'] ?? 0;
+      _dailyProtein = response['protein'] ?? 0;
+      _dailyCarbs = response['carbs'] ?? 0;
+      _dailyFat = response['fat'] ?? 0;
 
       // Fetch today's logs to calculate calories burned (without setting loading state)
       await fetchLogs(
