@@ -11,8 +11,6 @@ services:
     volumes:
       - mongodb_data:/data/db
       - mongodb_config:/data/configdb
-    ports:
-      - "27017:27017"
     networks:
       - healthlog
     healthcheck:
@@ -54,7 +52,7 @@ services:
     depends_on:
       - api
     ports:
-      - "80:80"
+      - "3000:3000"
     networks:
       - healthlog
 

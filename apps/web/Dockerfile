@@ -14,11 +14,18 @@ COPY public ./public
 
 RUN npm run build
 
-FROM nginx:alpine
-RUN rm /etc/nginx/conf.d/default.conf
-COPY nginx.conf /etc/nginx/conf.d/default.conf
-COPY --from=builder /app/dist /usr/share/nginx/html
+# New final stage using a simple node server
+FROM node:20-alpine
+WORKDIR /app
 
-EXPOSE 80
+# Install 'serve' to host the static files
+RUN npm install -g serve
 
-CMD ["nginx", "-g", "daemon off;"]
+# Copy built assets from the builder stage
+COPY --from=builder /app/dist ./public
+
+# Expose the port serve will run on
+EXPOSE 3000
+
+# Start the server
+CMD ["serve", "-s", "public", "-l", "3000"]
