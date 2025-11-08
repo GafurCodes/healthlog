@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { ZodError } from 'zod';
+import { AppError } from '../utils/errors.js';
 
 export function errorHandler(
   error: Error,
@@ -13,6 +14,13 @@ export function errorHandler(
     path: req.path,
     method: req.method,
   });
+
+  if (error instanceof AppError) {
+    res.status(error.statusCode).json({
+      message: error.message,
+    });
+    return;
+  }
 
   if (error instanceof ZodError) {
     const issues = error.issues || [];

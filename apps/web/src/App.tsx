@@ -13,6 +13,7 @@ import { VerifyEmailPage } from './pages/VerifyEmailPage';
 import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
 import { ResetPasswordPage } from './pages/ResetPasswordPage';
 import { DashboardPage } from './pages/DashboardPage';
+import { SettingsPage } from './pages/SettingsPage';
 import GoalsPage from './pages/GoalsPage';
 import { LogsPage } from './pages/LogsPage';
 /*import { LogFormPage } from './pages/LogFormPage';*/
@@ -93,6 +94,14 @@ const App: React.FC = () => {
                     element={
                       <ProtectedRoute>
                         <LogFormPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path='/settings'
+                    element={
+                      <ProtectedRoute>
+                        <SettingsPage />
                       </ProtectedRoute>
                     }
                   />

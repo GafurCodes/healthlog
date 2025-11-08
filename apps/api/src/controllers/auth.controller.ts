@@ -7,6 +7,8 @@ import {
   resendVerificationEmailSchema,
   forgotPasswordSchema,
   resetPasswordSchema,
+  changePasswordSchema,
+  updateAccountSchema,
   refreshTokenSchema,
 } from '../utils/validation.js';
 
@@ -80,6 +82,44 @@ export async function resetPassword(
   try {
     const data = resetPasswordSchema.parse(req.body);
     const result = await authService.resetPassword(data);
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function changePassword(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    if (!req.user) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const data = changePasswordSchema.parse(req.body);
+    const result = await authService.changePassword(req.user.userId, data);
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function updateAccount(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    if (!req.user) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const data = updateAccountSchema.parse(req.body);
+    const result = await authService.updateAccount(req.user.userId, data);
     res.status(200).json(result);
   } catch (error) {
     next(error);

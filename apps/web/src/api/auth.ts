@@ -17,6 +17,15 @@ export const authApi = {
   resetPassword: (token: string, newPassword: string) =>
     apiClient.post<{ message: string }>('/auth/reset-password', { token, newPassword }),
 
+  changePassword: (currentPassword: string, newPassword: string) =>
+    apiClient.post<{ message: string }>('/auth/change-password', {
+      currentPassword,
+      newPassword,
+    }),
+
+  updateAccount: (name: string) =>
+    apiClient.patch<{ message: string; user: User }>('/auth/me', { name }),
+
   refresh: (refreshToken: string) =>
     apiClient.post<AuthResponse>('/auth/refresh', { refreshToken }),
 
