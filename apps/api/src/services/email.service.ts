@@ -16,10 +16,14 @@ export async function sendVerificationEmail(
 ): Promise<void> {
   const env = getEnv();
 
-  const verificationUrl = `${env.APP_BASE_URL}/verify-email?token=${token}`;
+  const verificationUrl = `${env.FRONTEND_URL}/verify-email?token=${token}`;
+
+  console.log(`📧 Attempting to send verification email to ${to}`);
+  console.log(`📧 From: ${env.EMAIL_FROM}`);
+  console.log(`📧 Verification URL: ${verificationUrl}`);
 
   try {
-    await sgMail.send({
+    const response = await sgMail.send({
       from: env.EMAIL_FROM,
       to,
       subject: "Verify your Nibble account",
@@ -34,9 +38,15 @@ export async function sendVerificationEmail(
       `,
     });
 
-    console.log(`Verification email sent to ${to}`);
+    console.log(`✅ Verification email sent successfully to ${to}`);
+    console.log(`📧 SendGrid response:`, JSON.stringify(response, null, 2));
   } catch (error) {
-    console.error(`Failed to send verification email to ${to}`, error);
+    console.error(`❌ Failed to send verification email to ${to}`);
+    console.error(`📧 SendGrid error details:`, error);
+    if (error && typeof error === 'object' && 'response' in error) {
+      const sgError = error as any;
+      console.error(`📧 SendGrid error body:`, sgError.response?.body);
+    }
     throw new Error("Failed to send verification email");
   }
 }
@@ -48,7 +58,7 @@ export async function sendPasswordResetEmail(
 ): Promise<void> {
   const env = getEnv();
 
-  const resetUrl = `${env.APP_BASE_URL}/reset-password?token=${token}`;
+  const resetUrl = `${env.FRONTEND_URL}/reset-password?token=${token}`;
 
   try {
     await sgMail.send({

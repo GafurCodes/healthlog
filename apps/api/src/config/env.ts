@@ -15,8 +15,7 @@ const envSchema = z.object({
   EMAIL_FROM: z.string().email('Invalid EMAIL_FROM address'),
   SENDGRID_API_KEY: z.string().min(1, 'SENDGRID_API_KEY is required'),
 
-  APP_BASE_URL: z.string().url('Invalid APP_BASE_URL'),
-  API_BASE_URL: z.string().url('Invalid API_BASE_URL'),
+  FRONTEND_URL: z.string().url('Invalid FRONTEND_URL'),
 });
 
 export type Env = z.infer<typeof envSchema>;

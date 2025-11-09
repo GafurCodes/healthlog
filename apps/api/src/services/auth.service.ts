@@ -64,17 +64,17 @@ export async function login(data: LoginInput): Promise<AuthResponse> {
 
   const user = await User.findOne({ email });
   if (!user) {
-    throw new Error('Invalid email or password');
+    throw new AppError('Invalid email or password', 401);
   }
 
   const isPasswordValid = await argon2.verify(user.password, password);
   if (!isPasswordValid) {
-    throw new Error('Invalid email or password');
+    throw new AppError('Invalid email or password', 401);
   }
 
   // Enforce email verification
   if (!user.emailVerified) {
-    throw new Error('Please verify your email before logging in. Check your inbox for the verification link.');
+    throw new AppError('Please verify your email before logging in. Check your inbox for the verification link.', 403);
   }
 
   const tokens = generateTokens({
@@ -94,7 +94,14 @@ export async function login(data: LoginInput): Promise<AuthResponse> {
 }
 
 export async function verifyEmail(token: string): Promise<{ message: string }> {
-  const hashedToken = hashToken(token);
+  // Trim token as safety measure (Zod should handle this, but being defensive)
+  const trimmedToken = token.trim();
+  const hashedToken = hashToken(trimmedToken);
+
+  console.log('🔍 Verifying email with token:', {
+    tokenLength: trimmedToken.length,
+    hashedTokenPreview: hashedToken.substring(0, 10) + '...',
+  });
 
   const user = await User.findOne({
     emailVerificationToken: hashedToken,
@@ -102,8 +109,11 @@ export async function verifyEmail(token: string): Promise<{ message: string }> {
   });
 
   if (!user) {
-    throw new Error('Invalid or expired verification token');
+    console.log('❌ No user found with matching verification token');
+    throw new AppError('Invalid or expired verification token', 400);
   }
+
+  console.log('✅ Email verification successful for user:', user.email);
 
   user.emailVerified = true;
   user.emailVerificationToken = undefined;
