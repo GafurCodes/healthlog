@@ -34,12 +34,6 @@ function normalizeListResponse(payload: any, query?: LogsQuery): LogsResponse {
   return { data, page, pageSize, total, totalPages };
 }
 
-function emptyListResponse(query?: LogsQuery): LogsResponse {
-  const page = Number(query?.page ?? 1);
-  const pageSize = Number(query?.pageSize ?? 10);
-  return { data: [], page, pageSize, total: 0, totalPages: 1 };
-}
-
 export const logsApi = {
   list: async (query?: LogsQuery) => {
     const params: any = { ...(query || {}) };

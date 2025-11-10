@@ -15,7 +15,7 @@ RUN npm run build
 
 FROM node:20-slim
 WORKDIR /app
-RUN apt-get update && apt-get install -y dumb-init && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y dumb-init curl && rm -rf /var/lib/apt/lists/*
 
 COPY package.json ./
 # Remove lock file to ensure fresh dependency resolution for the target platform

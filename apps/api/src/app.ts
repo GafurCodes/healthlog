@@ -24,12 +24,15 @@ export function createApp(): express.Application {
   // Parse CORS_ORIGIN to handle multiple origins
   const corsOrigins = env.CORS_ORIGIN.split(',').map((origin) => origin.trim());
 
-  app.use(
-    cors({
-      origin: corsOrigins,
-      credentials: true,
-    })
-  );
+  // Handle wildcard '*' for development or allow specific origins
+  const corsOptions = {
+    origin: corsOrigins.includes('*') ? '*' : corsOrigins,
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  };
+
+  app.use(cors(corsOptions));
 
   app.use(compression());
 
