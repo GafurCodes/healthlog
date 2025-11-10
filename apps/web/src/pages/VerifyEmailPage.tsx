@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Card, CardBody, CardHeader } from '../components/Card';
@@ -11,14 +11,22 @@ export const VerifyEmailPage: React.FC = () => {
   const [message, setMessage] = useState('');
   const { verifyEmail } = useAuth();
   const navigate = useNavigate();
+  const hasAttemptedVerification = useRef(false);
 
   useEffect(() => {
+    // Prevent duplicate verification attempts
+    if (hasAttemptedVerification.current) {
+      return;
+    }
+
     const token = searchParams.get('token');
     if (!token) {
       setStatus('error');
       setMessage('No verification token provided');
       return;
     }
+
+    hasAttemptedVerification.current = true;
 
     verifyEmail(token)
       .then(() => {
