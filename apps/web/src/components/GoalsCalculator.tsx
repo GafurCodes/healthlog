@@ -38,19 +38,32 @@ export function GoalsCalculator() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const res = await fetch("/api/nutrition/maintenance-calories", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        ...form,
-        height: Number(form.height),
-        weight: Number(form.weight),
-        age: Number(form.age),
-      }),
-    });
-    const data = await res.json();
-    setResult(data);
-    updateCaloriesAndMacros(data.tdee, goal);
+    setStatus("");
+    try {
+      const res = await fetch("/api/nutrition/maintenance-calories", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...form,
+          height: Number(form.height),
+          weight: Number(form.weight),
+          age: Number(form.age),
+        }),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({ message: "Failed to calculate calories" }));
+        throw new Error(errorData.message || `Server error: ${res.status}`);
+      }
+
+      const data = await res.json();
+      setResult(data);
+      updateCaloriesAndMacros(data.tdee, goal);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to calculate maintenance calories";
+      console.error("Maintenance calories calculation error:", err);
+      setStatus(`❌ ${errorMessage}`);
+    }
   };
 
   const updateCaloriesAndMacros = (tdee: number, goal: string) => {
@@ -160,6 +173,8 @@ export function GoalsCalculator() {
                 Calculate Maintenance
               </Button>
             </form>
+
+            {status && !result && <p style={{ marginTop: "1rem" }}>{status}</p>}
 
             {result && (
               <div className={styles["mt-md"]}>

@@ -42,7 +42,7 @@ export const SettingsPage: React.FC = () => {
       setNameSuccess(message || 'Account details updated successfully.');
     } catch (err) {
       const apiError = handleApiError(err);
-      setNameError(apiError.message || 'Unable to update account details');
+      setNameError(apiError.message);
     } finally {
       setNameLoading(false);
     }
@@ -68,7 +68,7 @@ export const SettingsPage: React.FC = () => {
       setConfirmPassword('');
     } catch (err) {
       const apiError = handleApiError(err);
-      setPasswordError(apiError.message || 'Unable to update password');
+      setPasswordError(apiError.message);
     } finally {
       setLoading(false);
     }

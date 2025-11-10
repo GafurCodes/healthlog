@@ -48,14 +48,9 @@ export const logsApi = {
     if (isDateOnly(params.endDate))
       params.endDate = toEndOfDayISO(params.endDate);
 
-    try {
-      const res = await apiClient.get<any>('/logs', { params });
-      const body = normalizeListResponse(res.data, query);
-      return { ...res, data: body } as typeof res & { data: LogsResponse };
-    } catch {
-      const body = emptyListResponse(query);
-      return { data: body } as { data: LogsResponse };
-    }
+    const res = await apiClient.get<any>('/logs', { params });
+    const body = normalizeListResponse(res.data, query);
+    return { ...res, data: body } as typeof res & { data: LogsResponse };
   },
 
   get: async (id: string) => {
@@ -102,13 +97,9 @@ export const logsApi = {
   },
 
   delete: async (id: string) => {
-    try {
-      const res = await apiClient.delete<{ success: boolean; id: string }>(
-        `/logs/${id}`
-      );
-      return res.data;
-    } catch {
-      return { success: false, id };
-    }
+    const res = await apiClient.delete<{ success: boolean; id: string }>(
+      `/logs/${id}`
+    );
+    return res.data;
   },
 };

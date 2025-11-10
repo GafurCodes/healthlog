@@ -105,7 +105,8 @@ export const LogsPage: React.FC = () => {
       } else {
         setTodaysMacros({ calories: 0, protein: 0, carbs: 0, fat: 0 });
       }
-    } catch {
+    } catch (err) {
+      console.error('Failed to load goals and today\'s macros:', err);
       setTodaysMacros({ calories: 0, protein: 0, carbs: 0, fat: 0 });
     }
   };

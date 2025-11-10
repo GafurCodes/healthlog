@@ -79,7 +79,7 @@ export default function LogFormPage() {
         }));
       } catch (err) {
         const apiError = handleApiError(err);
-        setError(apiError.message || 'Failed to load log');
+        setError(apiError.message);
       } finally {
         setLoading(false);
       }
@@ -154,7 +154,7 @@ export default function LogFormPage() {
       navigate('/logs');
     } catch (err) {
       const apiError = handleApiError(err);
-      setError(apiError.message || 'Unexpected error');
+      setError(apiError.message);
     } finally {
       setSaving(false);
     }
