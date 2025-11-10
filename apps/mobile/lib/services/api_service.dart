@@ -231,6 +231,53 @@ class ApiService {
     }
   }
 
+  static Future<Map<String, dynamic>> updateLog({
+    required String id,
+    String? type,
+    Map<String, dynamic>? metrics,
+    String? notes,
+    DateTime? date,
+  }) async {
+    final body = <String, dynamic>{};
+
+    if (type != null) {
+      body['type'] = type;
+    }
+    if (metrics != null) {
+      body['metrics'] = metrics;
+    }
+    if (notes != null) {
+      body['notes'] = notes;
+    }
+    if (date != null) {
+      body['date'] = date.toIso8601String();
+    }
+
+    final response = await _request('PUT', '/logs/$id', body: body);
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      final error = jsonDecode(response.body);
+      throw ApiException(
+        message: error['message'] ?? 'Failed to update log',
+        statusCode: response.statusCode,
+      );
+    }
+  }
+
+  static Future<void> deleteLog(String id) async {
+    final response = await _request('DELETE', '/logs/$id');
+
+    if (response.statusCode != 200) {
+      final error = jsonDecode(response.body);
+      throw ApiException(
+        message: error['message'] ?? 'Failed to delete log',
+        statusCode: response.statusCode,
+      );
+    }
+  }
+
   static Future<Map<String, dynamic>> getDailyCalories({
     required DateTime startDate,
     required DateTime endDate,
@@ -360,6 +407,44 @@ class ApiService {
       final error = jsonDecode(response.body);
       throw ApiException(
         message: error['message'] ?? 'Failed to delete profile',
+        statusCode: response.statusCode,
+      );
+    }
+  }
+
+  // Food search endpoints
+  static Future<Map<String, dynamic>?> searchFood(String query) async {
+    final response = await _request('POST', '/food/search', body: {'query': query});
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      // API returns null if not found, or an object with nutrition data
+      if (data == null) {
+        return null;
+      }
+      return data as Map<String, dynamic>;
+    } else {
+      final error = jsonDecode(response.body);
+      throw ApiException(
+        message: error['message'] ?? 'Failed to search food',
+        statusCode: response.statusCode,
+      );
+    }
+  }
+
+  static Future<List<Map<String, dynamic>>> autocompleteFood(String query) async {
+    final response = await _request('POST', '/food/autocomplete', body: {'query': query});
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      if (data is List) {
+        return List<Map<String, dynamic>>.from(data);
+      }
+      return [];
+    } else {
+      final error = jsonDecode(response.body);
+      throw ApiException(
+        message: error['message'] ?? 'Failed to fetch food suggestions',
         statusCode: response.statusCode,
       );
     }

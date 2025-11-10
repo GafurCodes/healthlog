@@ -149,7 +149,12 @@ export async function getDailyCaloriesConsumed(
   userId: string,
   startDate: Date,
   endDate: Date
-): Promise<{ caloriesConsumed: number }> {
+): Promise<{ 
+  caloriesConsumed: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+}> {
   const filter: Record<string, any> = {
     userId,
     type: "meal",
@@ -162,14 +167,27 @@ export async function getDailyCaloriesConsumed(
   const mealLogs = await Log.find(filter);
 
   let caloriesConsumed = 0;
+  let protein = 0;
+  let carbs = 0;
+  let fat = 0;
+
   for (const log of mealLogs) {
     const metrics = log.metrics as any;
     if (metrics?.calories && typeof metrics.calories === "number") {
       caloriesConsumed += metrics.calories;
     }
+    if (metrics?.protein && typeof metrics.protein === "number") {
+      protein += metrics.protein;
+    }
+    if (metrics?.carbs && typeof metrics.carbs === "number") {
+      carbs += metrics.carbs;
+    }
+    if (metrics?.fat && typeof metrics.fat === "number") {
+      fat += metrics.fat;
+    }
   }
 
-  return { caloriesConsumed };
+  return { caloriesConsumed, protein, carbs, fat };
 }
 
 // -----------------------

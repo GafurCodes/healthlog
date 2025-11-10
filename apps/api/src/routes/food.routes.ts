@@ -7,5 +7,6 @@ const router = Router();
 //router.use(requireAuth);
 
 router.post("/search", foodController.searchFood);
+router.post("/autocomplete", foodController.autocompleteFood);
 
 export default router;
