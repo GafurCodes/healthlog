@@ -16,12 +16,13 @@ export const Input: React.FC<InputProps> = ({
 }) => {
   const widthClass = fullWidth ? styles['input-full-width'] : '';
   const errorClass = error ? styles['input-error'] : '';
+  const disabledClass = (props.disabled || props.readOnly) ? styles['input-disabled'] : '';
 
   return (
     <div className={`${styles['input-wrapper']} ${widthClass}`}>
       {label && <label className={styles['input-label']}>{label}</label>}
       <input
-        className={`${styles.input} ${errorClass} ${className}`}
+        className={`${styles.input} ${errorClass} ${disabledClass} ${className}`}
         {...props}
       />
       {error && <span className={styles['input-error-message']}>{error}</span>}
@@ -38,12 +39,13 @@ export const TextArea: React.FC<
 > = ({ label, error, fullWidth = true, className = '', ...props }) => {
   const widthClass = fullWidth ? styles['input-full-width'] : '';
   const errorClass = error ? styles['input-error'] : '';
+  const disabledClass = (props.disabled || props.readOnly) ? styles['input-disabled'] : '';
 
   return (
     <div className={`${styles['input-wrapper']} ${widthClass}`}>
       {label && <label className={styles['input-label']}>{label}</label>}
       <textarea
-        className={`${styles.input} ${errorClass} ${className}`}
+        className={`${styles.input} ${errorClass} ${disabledClass} ${className}`}
         {...props}
       />
       {error && <span className={styles['input-error-message']}>{error}</span>}
@@ -61,12 +63,13 @@ export const Select: React.FC<
 > = ({ label, error, options, fullWidth = true, className = '', ...props }) => {
   const widthClass = fullWidth ? styles['input-full-width'] : '';
   const errorClass = error ? styles['input-error'] : '';
+  const disabledClass = props.disabled ? styles['input-disabled'] : '';
 
   return (
     <div className={`${styles['input-wrapper']} ${widthClass}`}>
       {label && <label className={styles['input-label']}>{label}</label>}
       <select
-        className={`${styles.input} ${errorClass} ${className}`}
+        className={`${styles.input} ${errorClass} ${disabledClass} ${className}`}
         {...props}
       >
         {options.map((opt) => (

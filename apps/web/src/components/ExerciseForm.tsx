@@ -213,6 +213,7 @@ export default function ExerciseForm({
             onChange={(e) =>
               onChange({ ...value, caloriesBurned: e.target.value })
             }
+            disabled={true}
           />
         </div>
       )}
@@ -256,7 +257,7 @@ export default function ExerciseForm({
               label='Derived Duration (min)'
               type='number'
               value={String(Math.round(effectiveDurationMin || 0))}
-              onChange={() => {}}
+              disabled={true}
             />
           </div>
           <div className={styles['grid-2']}>
@@ -271,12 +272,13 @@ export default function ExerciseForm({
               onChange={(e) =>
                 onChange({ ...value, caloriesBurned: e.target.value })
               }
+              disabled={true}
             />
             <Input
               label='Duration (minutes)'
               type='number'
               value={String(Math.round(effectiveDurationMin || 0))}
-              onChange={() => {}}
+              disabled={true}
             />
           </div>
         </>

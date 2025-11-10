@@ -157,24 +157,28 @@ export default function MealForm({ value, onChange }: MealFormProps) {
                 type="number"
                 value={macros.calories}
                 onChange={(e) => handleMacroChange("calories", e.target.value)}
+                disabled={true}
               />
               <Input
                 label="Protein (g)"
                 type="number"
                 value={macros.protein}
                 onChange={(e) => handleMacroChange("protein", e.target.value)}
+                disabled={true}
               />
               <Input
                 label="Carbs (g)"
                 type="number"
                 value={macros.carbs}
                 onChange={(e) => handleMacroChange("carbs", e.target.value)}
+                disabled={true}
               />
               <Input
                 label="Fat (g)"
                 type="number"
                 value={macros.fat}
                 onChange={(e) => handleMacroChange("fat", e.target.value)}
+                disabled={true}
               />
             </>
           )}

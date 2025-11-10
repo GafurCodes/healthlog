@@ -139,6 +139,13 @@ body {
   font-size: 0.75rem;
 }
 
+.input-disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background-color: var(--color-bg-light);
+  pointer-events: none;
+}
+
 .card {
   background-color: var(--color-bg);
   border: 1px solid var(--color-border);

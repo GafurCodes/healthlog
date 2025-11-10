@@ -220,6 +220,7 @@ export function GoalsCalculator() {
                         onChange={(e) =>
                           setAutoMacros({ ...autoMacros, calories: Number(e.target.value) || 0 })
                         }
+                        disabled={true}
                       />
                       <Input
                         label="Protein (g)"
@@ -228,6 +229,7 @@ export function GoalsCalculator() {
                         onChange={(e) =>
                           setAutoMacros({ ...autoMacros, protein: Number(e.target.value) || 0 })
                         }
+                        disabled={true}
                       />
                       <Input
                         label="Fat (g)"
@@ -236,6 +238,7 @@ export function GoalsCalculator() {
                         onChange={(e) =>
                           setAutoMacros({ ...autoMacros, fat: Number(e.target.value) || 0 })
                         }
+                        disabled={true}
                       />
                       <Input
                         label="Carbs (g)"
@@ -244,6 +247,7 @@ export function GoalsCalculator() {
                         onChange={(e) =>
                           setAutoMacros({ ...autoMacros, carbs: Number(e.target.value) || 0 })
                         }
+                        disabled={true}
                       />
                     </div>
                   )}
