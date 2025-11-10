@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/profile_provider.dart';
 import '../theme/app_theme.dart';
+import '../components/goals_calculator.dart';
 
 class ProfileTab extends StatefulWidget {
   const ProfileTab({super.key});
@@ -130,6 +131,10 @@ class _ProfileTabState extends State<ProfileTab> {
                   ),
                 ),
                 const SizedBox(height: 32),
+                // Goals Calculator
+                GoalsCalculator(profileProvider: provider),
+                const SizedBox(height: 32),
+                // Manual Goals Entry
                 Card(
                   child: Padding(
                     padding: const EdgeInsets.all(24.0),
@@ -139,11 +144,19 @@ class _ProfileTabState extends State<ProfileTab> {
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           const Text(
-                            'Macro Goals',
+                            'Manual Macro Goals',
                             style: TextStyle(
                               fontSize: 20,
                               fontWeight: FontWeight.bold,
                               color: AppTheme.text,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          const Text(
+                            'Or manually enter your goals below',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: AppTheme.textLight,
                             ),
                           ),
                           const SizedBox(height: 24),
