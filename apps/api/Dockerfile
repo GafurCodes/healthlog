@@ -27,7 +27,7 @@ COPY --from=builder /app/dist ./dist
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nodejs
 
-USER nodejs
+# USER nodejs
 EXPOSE 4000
 
 ENTRYPOINT ["dumb-init", "--"]
