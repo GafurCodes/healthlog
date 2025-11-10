@@ -3,10 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
-  static const String baseUrl = String.fromEnvironment(
-    'API_BASE_URL',
-    defaultValue: 'http://10.182.159.244:4000/api',
-  );
+  static const String baseUrl = 'https://nibbleapp.xyz/api';
 
   static const String _accessTokenKey = 'accessToken';
   static const String _refreshTokenKey = 'refreshToken';
@@ -414,7 +411,11 @@ class ApiService {
 
   // Food search endpoints
   static Future<Map<String, dynamic>?> searchFood(String query) async {
-    final response = await _request('POST', '/food/search', body: {'query': query});
+    final response = await _request(
+      'POST',
+      '/food/search',
+      body: {'query': query},
+    );
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
@@ -432,8 +433,14 @@ class ApiService {
     }
   }
 
-  static Future<List<Map<String, dynamic>>> autocompleteFood(String query) async {
-    final response = await _request('POST', '/food/autocomplete', body: {'query': query});
+  static Future<List<Map<String, dynamic>>> autocompleteFood(
+    String query,
+  ) async {
+    final response = await _request(
+      'POST',
+      '/food/autocomplete',
+      body: {'query': query},
+    );
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
@@ -445,6 +452,37 @@ class ApiService {
       final error = jsonDecode(response.body);
       throw ApiException(
         message: error['message'] ?? 'Failed to fetch food suggestions',
+        statusCode: response.statusCode,
+      );
+    }
+  }
+
+  // Nutrition endpoints
+  static Future<Map<String, dynamic>> calculateMaintenanceCalories({
+    required String sex,
+    required double height,
+    required double weight,
+    required int age,
+    required String activityLevel,
+  }) async {
+    final response = await _request(
+      'POST',
+      '/nutrition/maintenance-calories',
+      body: {
+        'sex': sex,
+        'height': height,
+        'weight': weight,
+        'age': age,
+        'activityLevel': activityLevel,
+      },
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      final error = jsonDecode(response.body);
+      throw ApiException(
+        message: error['message'] ?? 'Failed to calculate maintenance calories',
         statusCode: response.statusCode,
       );
     }
