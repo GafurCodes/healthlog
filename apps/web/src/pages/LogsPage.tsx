@@ -9,6 +9,7 @@ import { Button } from '../components/Button';
 import { Card, CardBody, CardHeader } from '../components/Card';
 import { Input, Select } from '../components/Input';
 import { Modal } from '../components/Modal';
+import { LogDetailsModal } from '../components/LogDetailsModal';
 import { ProgressBar } from '../components/ProgressBar';
 import styles from '../styles/components.module.css';
 import { handleApiError } from '../api/client';
@@ -19,6 +20,7 @@ export const LogsPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [viewDetailsLog, setViewDetailsLog] = useState<Log | null>(null);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [type, setType] = useState('');
@@ -335,6 +337,12 @@ export const LogsPage: React.FC = () => {
                       )}
                     </div>
                     <div style={{ display: 'flex', gap: '0.5rem' }}>
+                      <Button
+                        variant='secondary'
+                        onClick={() => setViewDetailsLog(log)}
+                      >
+                        View Details
+                      </Button>
                       <Link to={`/logs/${log.id}/edit`}>
                         <Button variant='secondary'>Edit</Button>
                       </Link>
@@ -419,6 +427,12 @@ export const LogsPage: React.FC = () => {
           </Button>
         </div>
       </Modal>
+
+      <LogDetailsModal
+        log={viewDetailsLog}
+        isOpen={!!viewDetailsLog}
+        onClose={() => setViewDetailsLog(null)}
+      />
     </div>
   );
 };
