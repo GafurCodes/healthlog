@@ -1,0 +1,1748 @@
+swagger: "2.0"
+info:
+  description: |
+    Complete API Documentation for Nibble - A health and fitness tracking application.
+
+    This API allows users to:
+    - Track meals, workouts, and sleep
+    - Search for food nutritional information
+    - Find exercises and estimate calories burned
+    - Calculate maintenance calorie needs
+    - Set and monitor fitness goals
+
+  version: 1.0.0
+  title: Nibble API
+  contact:
+    email: farishabdelrahem@gmail.com
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+
+host: nibbleapp.xyz
+basePath: /api
+schemes:
+  - https
+
+securityDefinitions:
+  Bearer:
+    type: apiKey
+    name: Authorization
+    in: header
+    description: 'JWT Authorization header using the Bearer scheme. Example: "Authorization: Bearer {token}"'
+
+tags:
+  - name: Health
+    description: Health check endpoints
+  - name: Auth
+    description: Authentication and user account management
+  - name: Logs
+    description: Activity logging (meals, workouts, sleep)
+  - name: Profile
+    description: User profile and fitness goals
+  - name: Food
+    description: Food search and nutritional information
+  - name: Exercise
+    description: Exercise search and calorie estimation
+  - name: Nutrition
+    description: Nutrition calculators and tools
+
+paths:
+  /health:
+    get:
+      tags:
+        - Health
+      summary: Health check
+      description: Returns the health status of the API
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: API is healthy
+          schema:
+            type: object
+            properties:
+              status:
+                type: string
+                example: "ok"
+
+  /auth/register:
+    post:
+      tags:
+        - Auth
+      summary: Register a new user
+      description: Creates a new user account and sends an email verification link
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: body
+          name: body
+          description: User registration details
+          required: true
+          schema:
+            $ref: "#/definitions/RegisterRequest"
+      responses:
+        "201":
+          description: User created successfully
+          schema:
+            $ref: "#/definitions/AuthResponse"
+          examples:
+            application/json:
+              user:
+                id: "507f1f77bcf86cd799439011"
+                email: "fred@gmail.com"
+                name: "Fred"
+                emailVerified: false
+              tokens:
+                accessToken: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                refreshToken: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        "400":
+          description: Bad Request - Validation error
+          schema:
+            $ref: "#/definitions/Error"
+        "409":
+          description: Conflict - User already exists
+          schema:
+            $ref: "#/definitions/Error"
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: "#/definitions/Error"
+
+  /auth/login:
+    post:
+      tags:
+        - Auth
+      summary: Login a user
+      description: Authenticates a user and returns authentication tokens
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: body
+          name: body
+          description: User login credentials
+          required: true
+          schema:
+            $ref: "#/definitions/LoginRequest"
+      responses:
+        "200":
+          description: Login successful
+          schema:
+            $ref: "#/definitions/AuthResponse"
+          examples:
+            application/json:
+              user:
+                id: "507f1f77bcf86cd799439011"
+                email: "fred@gmail.com"
+                name: "Fred"
+                emailVerified: true
+              tokens:
+                accessToken: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                refreshToken: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        "400":
+          description: Bad Request - Validation error
+          schema:
+            $ref: "#/definitions/Error"
+        "401":
+          description: Unauthorized - Invalid credentials
+          schema:
+            $ref: "#/definitions/Error"
+        "403":
+          description: Forbidden - Email not verified
+          schema:
+            $ref: "#/definitions/Error"
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: "#/definitions/Error"
+
+  /auth/verify-email:
+    post:
+      tags:
+        - Auth
+      summary: Verify email address
+      description: Verifies a user's email address using the token sent via email
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: body
+          name: body
+          description: Email verification token
+          required: true
+          schema:
+            type: object
+            required:
+              - token
+            properties:
+              token:
+                type: string
+                example: "abc123def456"
+      responses:
+        "200":
+          description: Email verified successfully
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                example: true
+              message:
+                type: string
+                example: "Email verified successfully"
+        "400":
+          description: Bad Request - Invalid or expired token
+          schema:
+            $ref: "#/definitions/Error"
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: "#/definitions/Error"
+
+  /auth/resend-verification-email:
+    post:
+      tags:
+        - Auth
+      summary: Resend verification email
+      description: Resends the email verification link to the user's email address
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: body
+          name: body
+          description: User email address
+          required: true
+          schema:
+            type: object
+            required:
+              - email
+            properties:
+              email:
+                type: string
+                format: email
+                example: "fred@gmail.com"
+      responses:
+        "200":
+          description: Verification email sent successfully
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                example: true
+              message:
+                type: string
+                example: "Verification email sent"
+        "400":
+          description: Bad Request - Validation error
+          schema:
+            $ref: "#/definitions/Error"
+        "404":
+          description: Not Found - User not found
+          schema:
+            $ref: "#/definitions/Error"
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: "#/definitions/Error"
+
+  /auth/forgot-password:
+    post:
+      tags:
+        - Auth
+      summary: Request password reset
+      description: Sends a password reset link to the user's email address
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: body
+          name: body
+          description: User email address
+          required: true
+          schema:
+            type: object
+            required:
+              - email
+            properties:
+              email:
+                type: string
+                format: email
+                example: "fred@gmail.com"
+      responses:
+        "200":
+          description: Password reset email sent successfully
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                example: true
+              message:
+                type: string
+                example: "Password reset email sent"
+        "400":
+          description: Bad Request - Validation error
+          schema:
+            $ref: "#/definitions/Error"
+        "404":
+          description: Not Found - User not found
+          schema:
+            $ref: "#/definitions/Error"
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: "#/definitions/Error"
+
+  /auth/reset-password:
+    post:
+      tags:
+        - Auth
+      summary: Reset password
+      description: Resets the user's password using the token sent via email
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: body
+          name: body
+          description: Password reset token and new password
+          required: true
+          schema:
+            type: object
+            required:
+              - token
+              - password
+            properties:
+              token:
+                type: string
+                example: "abc123def456"
+              password:
+                type: string
+                format: password
+                example: "newSecurePassword123"
+      responses:
+        "200":
+          description: Password reset successfully
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                example: true
+              message:
+                type: string
+                example: "Password reset successfully"
+        "400":
+          description: Bad Request - Invalid or expired token
+          schema:
+            $ref: "#/definitions/Error"
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: "#/definitions/Error"
+
+  /auth/refresh:
+    post:
+      tags:
+        - Auth
+      summary: Refresh access token
+      description: Generates a new access token using a valid refresh token
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: body
+          name: body
+          description: Refresh token
+          required: true
+          schema:
+            type: object
+            required:
+              - refreshToken
+            properties:
+              refreshToken:
+                type: string
+                example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+      responses:
+        "200":
+          description: Token refreshed successfully
+          schema:
+            type: object
+            properties:
+              accessToken:
+                type: string
+                example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+              refreshToken:
+                type: string
+                example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        "400":
+          description: Bad Request - Validation error
+          schema:
+            $ref: "#/definitions/Error"
+        "401":
+          description: Unauthorized - Invalid refresh token
+          schema:
+            $ref: "#/definitions/Error"
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: "#/definitions/Error"
+
+  /auth/change-password:
+    post:
+      tags:
+        - Auth
+      summary: Change password
+      description: Allows an authenticated user to change their password
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      security:
+        - Bearer: []
+      parameters:
+        - in: body
+          name: body
+          description: Current and new password
+          required: true
+          schema:
+            type: object
+            required:
+              - currentPassword
+              - newPassword
+            properties:
+              currentPassword:
+                type: string
+                format: password
+                example: "currentPassword123"
+              newPassword:
+                type: string
+                format: password
+                example: "newSecurePassword456"
+      responses:
+        "200":
+          description: Password changed successfully
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                example: true
+              message:
+                type: string
+                example: "Password changed successfully"
+        "400":
+          description: Bad Request - Validation error
+          schema:
+            $ref: "#/definitions/Error"
+        "401":
+          description: Unauthorized - Invalid current password or not authenticated
+          schema:
+            $ref: "#/definitions/Error"
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: "#/definitions/Error"
+
+  /auth/me:
+    patch:
+      tags:
+        - Auth
+      summary: Update user account details
+      description: Updates the authenticated user's account information (currently only name)
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      security:
+        - Bearer: []
+      parameters:
+        - in: body
+          name: body
+          description: Account details to update
+          required: true
+          schema:
+            type: object
+            properties:
+              name:
+                type: string
+                example: "Frederick"
+      responses:
+        "200":
+          description: Account updated successfully
+          schema:
+            $ref: "#/definitions/User"
+        "400":
+          description: Bad Request - Validation error
+          schema:
+            $ref: "#/definitions/Error"
+        "401":
+          description: Unauthorized - Not authenticated
+          schema:
+            $ref: "#/definitions/Error"
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: "#/definitions/Error"
+
+  /logs:
+    get:
+      tags:
+        - Logs
+      summary: Get user logs
+      description: Retrieves a paginated list of the user's activity logs with optional filtering by type and date range
+      produces:
+        - application/json
+      security:
+        - Bearer: []
+      parameters:
+        - name: type
+          in: query
+          description: Filter by log type
+          required: false
+          type: string
+          enum: [meal, workout, sleep]
+        - name: startDate
+          in: query
+          description: Filter logs from this date (ISO 8601 datetime format)
+          required: false
+          type: string
+          format: date-time
+        - name: endDate
+          in: query
+          description: Filter logs until this date (ISO 8601 datetime format)
+          required: false
+          type: string
+          format: date-time
+        - name: page
+          in: query
+          description: Page number (min 1)
+          required: false
+          type: integer
+          default: 1
+          minimum: 1
+        - name: pageSize
+          in: query
+          description: Number of items per page (min 1, max 100)
+          required: false
+          type: integer
+          default: 10
+          minimum: 1
+          maximum: 100
+      responses:
+        "200":
+          description: Logs retrieved successfully
+          schema:
+            $ref: "#/definitions/LogListResponse"
+          examples:
+            application/json:
+              data:
+                - id: "507f1f77bcf86cd799439011"
+                  userId: "507f1f77bcf86cd799439012"
+                  type: "meal"
+                  date: "2025-11-10T12:00:00.000Z"
+                  notes: "Lunch at home"
+                  metrics:
+                    name: "Grilled Chicken Salad"
+                    calories: 450
+                    protein: 35
+                    carbs: 25
+                    fat: 18
+                  createdAt: "2025-11-10T12:05:00.000Z"
+                  updatedAt: "2025-11-10T12:05:00.000Z"
+              pagination:
+                page: 1
+                pageSize: 10
+                totalItems: 45
+                totalPages: 5
+        "400":
+          description: Bad Request - Invalid query parameters
+          schema:
+            $ref: "#/definitions/Error"
+        "401":
+          description: Unauthorized - Not authenticated
+          schema:
+            $ref: "#/definitions/Error"
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: "#/definitions/Error"
+
+    post:
+      tags:
+        - Logs
+      summary: Create a new log
+      description: Creates a new activity log (meal, workout, or sleep)
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      security:
+        - Bearer: []
+      parameters:
+        - in: body
+          name: body
+          description: Log data
+          required: true
+          schema:
+            $ref: "#/definitions/LogCreateRequest"
+      responses:
+        "201":
+          description: Log created successfully
+          schema:
+            $ref: "#/definitions/Log"
+          examples:
+            application/json:
+              id: "507f1f77bcf86cd799439011"
+              userId: "507f1f77bcf86cd799439012"
+              type: "workout"
+              date: "2025-11-10T08:00:00.000Z"
+              notes: "Morning run"
+              metrics:
+                name: "Running"
+                duration: 30
+                workoutType: "cardio"
+                intensity: "moderate"
+                caloriesBurned: 300
+              createdAt: "2025-11-10T08:35:00.000Z"
+              updatedAt: "2025-11-10T08:35:00.000Z"
+        "400":
+          description: Bad Request - Validation error
+          schema:
+            $ref: "#/definitions/Error"
+        "401":
+          description: Unauthorized - Not authenticated
+          schema:
+            $ref: "#/definitions/Error"
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: "#/definitions/Error"
+
+  /logs/{id}:
+    get:
+      tags:
+        - Logs
+      summary: Get a specific log
+      description: Retrieves a single log by its ID
+      produces:
+        - application/json
+      security:
+        - Bearer: []
+      parameters:
+        - name: id
+          in: path
+          description: Log ID
+          required: true
+          type: string
+      responses:
+        "200":
+          description: Log retrieved successfully
+          schema:
+            $ref: "#/definitions/Log"
+        "401":
+          description: Unauthorized - Not authenticated
+          schema:
+            $ref: "#/definitions/Error"
+        "404":
+          description: Not Found - Log not found
+          schema:
+            $ref: "#/definitions/Error"
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: "#/definitions/Error"
+
+    put:
+      tags:
+        - Logs
+      summary: Update a log
+      description: Updates an existing log by its ID
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      security:
+        - Bearer: []
+      parameters:
+        - name: id
+          in: path
+          description: Log ID
+          required: true
+          type: string
+        - in: body
+          name: body
+          description: Updated log data
+          required: true
+          schema:
+            $ref: "#/definitions/LogUpdateRequest"
+      responses:
+        "200":
+          description: Log updated successfully
+          schema:
+            $ref: "#/definitions/Log"
+        "400":
+          description: Bad Request - Validation error
+          schema:
+            $ref: "#/definitions/Error"
+        "401":
+          description: Unauthorized - Not authenticated
+          schema:
+            $ref: "#/definitions/Error"
+        "404":
+          description: Not Found - Log not found
+          schema:
+            $ref: "#/definitions/Error"
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: "#/definitions/Error"
+
+    delete:
+      tags:
+        - Logs
+      summary: Delete a log
+      description: Deletes a log by its ID
+      produces:
+        - application/json
+      security:
+        - Bearer: []
+      parameters:
+        - name: id
+          in: path
+          description: Log ID
+          required: true
+          type: string
+      responses:
+        "200":
+          description: Log deleted successfully
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                example: true
+              id:
+                type: string
+                example: "507f1f77bcf86cd799439011"
+        "401":
+          description: Unauthorized - Not authenticated
+          schema:
+            $ref: "#/definitions/Error"
+        "404":
+          description: Not Found - Log not found
+          schema:
+            $ref: "#/definitions/Error"
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: "#/definitions/Error"
+
+  /logs/daily-calories:
+    get:
+      tags:
+        - Logs
+      summary: Get daily calorie consumption
+      description: Retrieves aggregated daily calorie consumption for a specified date range
+      produces:
+        - application/json
+      security:
+        - Bearer: []
+      parameters:
+        - name: startDate
+          in: query
+          description: Start date (ISO 8601 datetime format)
+          required: true
+          type: string
+          format: date-time
+        - name: endDate
+          in: query
+          description: End date (ISO 8601 datetime format)
+          required: true
+          type: string
+          format: date-time
+      responses:
+        "200":
+          description: Daily calorie data retrieved successfully
+          schema:
+            type: object
+            properties:
+              data:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    date:
+                      type: string
+                      format: date
+                      example: "2025-11-10"
+                    totalCalories:
+                      type: number
+                      example: 2150
+          examples:
+            application/json:
+              data:
+                - date: "2025-11-08"
+                  totalCalories: 2200
+                - date: "2025-11-09"
+                  totalCalories: 1950
+                - date: "2025-11-10"
+                  totalCalories: 2150
+        "400":
+          description: Bad Request - Invalid query parameters
+          schema:
+            $ref: "#/definitions/Error"
+        "401":
+          description: Unauthorized - Not authenticated
+          schema:
+            $ref: "#/definitions/Error"
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: "#/definitions/Error"
+
+  /logs/image:
+    post:
+      tags:
+        - Logs
+      summary: AI-powered food recognition from image
+      description: Uploads a food image and uses AI to extract nutritional information and create a meal log
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      security:
+        - Bearer: []
+      parameters:
+        - in: body
+          name: body
+          description: Base64 encoded image of food
+          required: true
+          schema:
+            type: object
+            required:
+              - image_b64
+            properties:
+              image_b64:
+                type: string
+                description: Base64 encoded image (max 50MB)
+                example: "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
+      responses:
+        "200":
+          description: Image processed successfully
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                example: "Image processed successfully"
+              nutritionalInfo:
+                type: object
+                properties:
+                  name:
+                    type: string
+                    example: "Grilled Salmon with Vegetables"
+                  calories:
+                    type: number
+                    example: 420
+                  protein:
+                    type: number
+                    example: 38
+                  carbs:
+                    type: number
+                    example: 15
+                  fat:
+                    type: number
+                    example: 22
+        "400":
+          description: Bad Request - Invalid image or too large
+          schema:
+            $ref: "#/definitions/Error"
+        "401":
+          description: Unauthorized - Not authenticated
+          schema:
+            $ref: "#/definitions/Error"
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: "#/definitions/Error"
+
+  /profile:
+    get:
+      tags:
+        - Profile
+      summary: Get user profile
+      description: Retrieves the authenticated user's profile including fitness goals
+      produces:
+        - application/json
+      security:
+        - Bearer: []
+      responses:
+        "200":
+          description: Profile retrieved successfully
+          schema:
+            $ref: "#/definitions/Profile"
+          examples:
+            application/json:
+              id: "507f1f77bcf86cd799439013"
+              userId: "507f1f77bcf86cd799439012"
+              goals:
+                calories: 2200
+                protein: 150
+                carbs: 200
+                fats: 70
+              createdAt: "2025-11-01T10:00:00.000Z"
+              updatedAt: "2025-11-10T08:00:00.000Z"
+        "401":
+          description: Unauthorized - Not authenticated
+          schema:
+            $ref: "#/definitions/Error"
+        "404":
+          description: Not Found - Profile not found
+          schema:
+            $ref: "#/definitions/Error"
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: "#/definitions/Error"
+
+    post:
+      tags:
+        - Profile
+      summary: Create or update profile
+      description: Creates a new profile or updates the existing profile for the authenticated user
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      security:
+        - Bearer: []
+      parameters:
+        - in: body
+          name: body
+          description: Profile data
+          required: true
+          schema:
+            $ref: "#/definitions/ProfileRequest"
+      responses:
+        "200":
+          description: Profile created/updated successfully
+          schema:
+            $ref: "#/definitions/Profile"
+        "400":
+          description: Bad Request - Validation error
+          schema:
+            $ref: "#/definitions/Error"
+        "401":
+          description: Unauthorized - Not authenticated
+          schema:
+            $ref: "#/definitions/Error"
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: "#/definitions/Error"
+
+    put:
+      tags:
+        - Profile
+      summary: Update profile
+      description: Updates the existing profile for the authenticated user
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      security:
+        - Bearer: []
+      parameters:
+        - in: body
+          name: body
+          description: Profile data
+          required: true
+          schema:
+            $ref: "#/definitions/ProfileRequest"
+      responses:
+        "200":
+          description: Profile updated successfully
+          schema:
+            $ref: "#/definitions/Profile"
+        "400":
+          description: Bad Request - Validation error
+          schema:
+            $ref: "#/definitions/Error"
+        "401":
+          description: Unauthorized - Not authenticated
+          schema:
+            $ref: "#/definitions/Error"
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: "#/definitions/Error"
+
+    delete:
+      tags:
+        - Profile
+      summary: Delete profile
+      description: Deletes the authenticated user's profile
+      produces:
+        - application/json
+      security:
+        - Bearer: []
+      responses:
+        "200":
+          description: Profile deleted successfully
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                example: true
+              id:
+                type: string
+                example: "507f1f77bcf86cd799439013"
+        "401":
+          description: Unauthorized - Not authenticated
+          schema:
+            $ref: "#/definitions/Error"
+        "404":
+          description: Not Found - Profile not found
+          schema:
+            $ref: "#/definitions/Error"
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: "#/definitions/Error"
+
+  /food/search:
+    post:
+      tags:
+        - Food
+      summary: Search for food items
+      description: Searches for food items and returns detailed nutritional information (public endpoint - no authentication required)
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: body
+          name: body
+          description: Search query
+          required: true
+          schema:
+            type: object
+            required:
+              - query
+            properties:
+              query:
+                type: string
+                example: "chicken breast"
+      responses:
+        "200":
+          description: Search results retrieved successfully
+          schema:
+            type: object
+            properties:
+              results:
+                type: array
+                items:
+                  $ref: "#/definitions/FoodItem"
+          examples:
+            application/json:
+              results:
+                - name: "Chicken Breast, Grilled"
+                  calories: 165
+                  protein: 31
+                  carbs: 0
+                  fat: 3.6
+                  servingSize: "100g"
+                - name: "Chicken Breast, Raw"
+                  calories: 120
+                  protein: 22
+                  carbs: 0
+                  fat: 2.6
+                  servingSize: "100g"
+        "400":
+          description: Bad Request - Validation error
+          schema:
+            $ref: "#/definitions/Error"
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: "#/definitions/Error"
+
+  /food/autocomplete:
+    post:
+      tags:
+        - Food
+      summary: Get food autocomplete suggestions
+      description: Returns food name suggestions for autocomplete functionality (public endpoint - no authentication required)
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: body
+          name: body
+          description: Search query
+          required: true
+          schema:
+            type: object
+            required:
+              - query
+            properties:
+              query:
+                type: string
+                example: "chick"
+      responses:
+        "200":
+          description: Autocomplete suggestions retrieved successfully
+          schema:
+            type: object
+            properties:
+              suggestions:
+                type: array
+                items:
+                  type: string
+          examples:
+            application/json:
+              suggestions:
+                - "Chicken Breast"
+                - "Chicken Thigh"
+                - "Chicken Wings"
+                - "Chickpeas"
+        "400":
+          description: Bad Request - Validation error
+          schema:
+            $ref: "#/definitions/Error"
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: "#/definitions/Error"
+
+  /exercises/search:
+    get:
+      tags:
+        - Exercise
+      summary: Search for exercises
+      description: Searches for exercises by name or type
+      produces:
+        - application/json
+      security:
+        - Bearer: []
+      parameters:
+        - name: q
+          in: query
+          description: Search query for exercise
+          required: true
+          type: string
+      responses:
+        "200":
+          description: Search results retrieved successfully
+          schema:
+            type: object
+            properties:
+              results:
+                type: array
+                items:
+                  $ref: "#/definitions/Exercise"
+          examples:
+            application/json:
+              results:
+                - name: "Running"
+                  duration: 30
+                  caloriesBurned: 300
+                  exerciseType: "cardio"
+                - name: "Running (Treadmill)"
+                  duration: 30
+                  caloriesBurned: 280
+                  exerciseType: "cardio"
+        "400":
+          description: Bad Request - Missing query parameter
+          schema:
+            $ref: "#/definitions/Error"
+        "401":
+          description: Unauthorized - Not authenticated
+          schema:
+            $ref: "#/definitions/Error"
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: "#/definitions/Error"
+
+  /exercises/estimate:
+    post:
+      tags:
+        - Exercise
+      summary: Estimate calories burned
+      description: Calculates estimated calories burned for a given exercise based on duration, weight, and intensity
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      security:
+        - Bearer: []
+      parameters:
+        - in: body
+          name: body
+          description: Exercise details for calorie estimation
+          required: true
+          schema:
+            type: object
+            required:
+              - name
+              - durationMin
+            properties:
+              name:
+                type: string
+                example: "Running"
+              durationMin:
+                type: number
+                example: 30
+              weightKg:
+                type: number
+                example: 75
+              intensity:
+                type: string
+                enum: [low, moderate, high]
+                example: "moderate"
+      responses:
+        "200":
+          description: Calorie estimate calculated successfully
+          schema:
+            type: object
+            properties:
+              exercise:
+                type: string
+                example: "Running"
+              durationMin:
+                type: number
+                example: 30
+              estimatedCalories:
+                type: number
+                example: 300
+          examples:
+            application/json:
+              exercise: "Running"
+              durationMin: 30
+              estimatedCalories: 300
+        "400":
+          description: Bad Request - Validation error
+          schema:
+            $ref: "#/definitions/Error"
+        "401":
+          description: Unauthorized - Not authenticated
+          schema:
+            $ref: "#/definitions/Error"
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: "#/definitions/Error"
+
+  /exercises/lookup:
+    post:
+      tags:
+        - Exercise
+      summary: Lookup detailed exercise information
+      description: Retrieves detailed information about a specific exercise including calorie burn estimates
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      security:
+        - Bearer: []
+      parameters:
+        - in: body
+          name: body
+          description: Exercise lookup details
+          required: true
+          schema:
+            type: object
+            required:
+              - name
+            properties:
+              name:
+                type: string
+                example: "Swimming"
+              durationMin:
+                type: number
+                example: 45
+              weightKg:
+                type: number
+                example: 75
+              intensity:
+                type: string
+                enum: [low, moderate, high]
+                example: "moderate"
+      responses:
+        "200":
+          description: Exercise information retrieved successfully
+          schema:
+            type: object
+            properties:
+              name:
+                type: string
+                example: "Swimming"
+              type:
+                type: string
+                example: "cardio"
+              description:
+                type: string
+                example: "Full-body aerobic exercise in water"
+              caloriesBurnedPer30Min:
+                type: number
+                example: 250
+              estimatedCalories:
+                type: number
+                example: 375
+        "400":
+          description: Bad Request - Validation error
+          schema:
+            $ref: "#/definitions/Error"
+        "401":
+          description: Unauthorized - Not authenticated
+          schema:
+            $ref: "#/definitions/Error"
+        "404":
+          description: Not Found - Exercise not found
+          schema:
+            $ref: "#/definitions/Error"
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: "#/definitions/Error"
+
+  /nutrition/maintenance-calories:
+    post:
+      tags:
+        - Nutrition
+      summary: Calculate maintenance calories
+      description: Calculates daily maintenance calorie needs based on user's physical stats and activity level (public endpoint - no authentication required)
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: body
+          name: body
+          description: User physical stats and activity level
+          required: true
+          schema:
+            type: object
+            required:
+              - sex
+              - height
+              - weight
+              - age
+              - activityLevel
+            properties:
+              sex:
+                type: string
+                enum: [male, female]
+                example: "male"
+              height:
+                type: number
+                description: Height in centimeters
+                example: 180
+              weight:
+                type: number
+                description: Weight in kilograms
+                example: 75
+              age:
+                type: number
+                description: Age in years
+                example: 30
+              activityLevel:
+                type: string
+                enum: [sedentary, light, moderate, active, very_active]
+                example: "moderate"
+                description: |
+                  Activity levels:
+                  - sedentary: Little or no exercise
+                  - light: Light exercise 1-3 days/week
+                  - moderate: Moderate exercise 3-5 days/week
+                  - active: Heavy exercise 6-7 days/week
+                  - very_active: Very heavy exercise, physical job, training twice/day
+      responses:
+        "200":
+          description: Maintenance calories calculated successfully
+          schema:
+            type: object
+            properties:
+              maintenanceCalories:
+                type: number
+                example: 2400
+              bmr:
+                type: number
+                description: Basal Metabolic Rate
+                example: 1750
+              activityMultiplier:
+                type: number
+                example: 1.55
+          examples:
+            application/json:
+              maintenanceCalories: 2400
+              bmr: 1750
+              activityMultiplier: 1.55
+        "400":
+          description: Bad Request - Validation error
+          schema:
+            $ref: "#/definitions/Error"
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: "#/definitions/Error"
+
+definitions:
+  User:
+    type: object
+    properties:
+      id:
+        type: string
+        example: "507f1f77bcf86cd799439011"
+      email:
+        type: string
+        format: email
+        example: "fred@gmail.com"
+      name:
+        type: string
+        example: "Fred"
+      emailVerified:
+        type: boolean
+        example: true
+
+  RegisterRequest:
+    type: object
+    required:
+      - email
+      - password
+      - name
+    properties:
+      email:
+        type: string
+        format: email
+        example: "fred@gmail.com"
+      password:
+        type: string
+        format: password
+        minLength: 8
+        example: "securePassword123"
+      name:
+        type: string
+        example: "Fred"
+
+  LoginRequest:
+    type: object
+    required:
+      - email
+      - password
+    properties:
+      email:
+        type: string
+        format: email
+        example: "fred@gmail.com"
+      password:
+        type: string
+        format: password
+        example: "securePassword123"
+
+  AuthResponse:
+    type: object
+    properties:
+      user:
+        $ref: "#/definitions/User"
+      tokens:
+        type: object
+        properties:
+          accessToken:
+            type: string
+            description: JWT access token (expires in 15 minutes)
+            example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+          refreshToken:
+            type: string
+            description: JWT refresh token (expires in 7 days)
+            example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+
+  Profile:
+    type: object
+    properties:
+      id:
+        type: string
+        example: "507f1f77bcf86cd799439013"
+      userId:
+        type: string
+        example: "507f1f77bcf86cd799439012"
+      goals:
+        type: object
+        required:
+          - calories
+          - protein
+          - carbs
+          - fats
+        properties:
+          calories:
+            type: number
+            minimum: 0
+            example: 2200
+          protein:
+            type: number
+            minimum: 0
+            example: 150
+          carbs:
+            type: number
+            minimum: 0
+            example: 200
+          fats:
+            type: number
+            minimum: 0
+            example: 70
+      createdAt:
+        type: string
+        format: date-time
+        example: "2025-11-01T10:00:00.000Z"
+      updatedAt:
+        type: string
+        format: date-time
+        example: "2025-11-10T08:00:00.000Z"
+
+  ProfileRequest:
+    type: object
+    required:
+      - goals
+    properties:
+      goals:
+        type: object
+        required:
+          - calories
+          - protein
+          - carbs
+          - fats
+        properties:
+          calories:
+            type: number
+            minimum: 0
+            example: 2200
+          protein:
+            type: number
+            minimum: 0
+            example: 150
+          carbs:
+            type: number
+            minimum: 0
+            example: 200
+          fats:
+            type: number
+            minimum: 0
+            example: 70
+
+  MealMetrics:
+    type: object
+    properties:
+      name:
+        type: string
+        example: "Grilled Chicken Salad"
+      calories:
+        type: number
+        example: 450
+      protein:
+        type: number
+        example: 35
+      carbs:
+        type: number
+        example: 25
+      fat:
+        type: number
+        example: 18
+
+  WorkoutMetrics:
+    type: object
+    properties:
+      name:
+        type: string
+        example: "Running"
+      duration:
+        type: number
+        description: Duration in minutes
+        example: 30
+      workoutType:
+        type: string
+        enum: [cardio, strength, flexibility]
+        example: "cardio"
+      intensity:
+        type: string
+        enum: [low, moderate, high]
+        example: "moderate"
+      caloriesBurned:
+        type: number
+        example: 300
+
+  SleepMetrics:
+    type: object
+    properties:
+      duration:
+        type: number
+        description: Duration in minutes
+        example: 480
+      quality:
+        type: string
+        enum: [poor, fair, good, excellent]
+        example: "good"
+
+  Log:
+    type: object
+    properties:
+      id:
+        type: string
+        example: "507f1f77bcf86cd799439011"
+      userId:
+        type: string
+        example: "507f1f77bcf86cd799439012"
+      type:
+        type: string
+        enum: [meal, workout, sleep]
+        example: "meal"
+      date:
+        type: string
+        format: date-time
+        description: ISO 8601 datetime format
+        example: "2025-11-10T12:00:00.000Z"
+      notes:
+        type: string
+        example: "Post-workout meal"
+      metrics:
+        type: object
+        description: "Varies by type: MealMetrics for meal, WorkoutMetrics for workout, SleepMetrics for sleep"
+      createdAt:
+        type: string
+        format: date-time
+        example: "2025-11-10T12:05:00.000Z"
+      updatedAt:
+        type: string
+        format: date-time
+        example: "2025-11-10T12:05:00.000Z"
+
+  LogCreateRequest:
+    type: object
+    required:
+      - type
+      - date
+      - metrics
+    properties:
+      type:
+        type: string
+        enum: [meal, workout, sleep]
+        example: "meal"
+      date:
+        type: string
+        format: date-time
+        description: ISO 8601 datetime format
+        example: "2025-11-10T12:00:00.000Z"
+      notes:
+        type: string
+        example: "Post-workout meal"
+      metrics:
+        type: object
+        description: "Varies by type: MealMetrics for meal, WorkoutMetrics for workout, SleepMetrics for sleep"
+
+  LogUpdateRequest:
+    type: object
+    properties:
+      type:
+        type: string
+        enum: [meal, workout, sleep]
+        example: "workout"
+      date:
+        type: string
+        format: date-time
+        description: ISO 8601 datetime format
+        example: "2025-11-10T08:00:00.000Z"
+      notes:
+        type: string
+        example: "Updated notes"
+      metrics:
+        type: object
+        description: "Varies by type: MealMetrics for meal, WorkoutMetrics for workout, SleepMetrics for sleep"
+
+  LogListResponse:
+    type: object
+    properties:
+      data:
+        type: array
+        items:
+          $ref: "#/definitions/Log"
+      pagination:
+        type: object
+        properties:
+          page:
+            type: integer
+            example: 1
+          pageSize:
+            type: integer
+            example: 10
+          totalItems:
+            type: integer
+            example: 45
+          totalPages:
+            type: integer
+            example: 5
+
+  FoodItem:
+    type: object
+    properties:
+      name:
+        type: string
+        example: "Chicken Breast, Grilled"
+      calories:
+        type: number
+        example: 165
+      protein:
+        type: number
+        example: 31
+      carbs:
+        type: number
+        example: 0
+      fat:
+        type: number
+        example: 3.6
+      servingSize:
+        type: string
+        example: "100g"
+
+  Exercise:
+    type: object
+    properties:
+      name:
+        type: string
+        example: "Running"
+      duration:
+        type: number
+        description: Duration in minutes
+        example: 30
+      caloriesBurned:
+        type: number
+        example: 300
+      exerciseType:
+        type: string
+        enum: [cardio, strength, flexibility]
+        example: "cardio"
+
+  Error:
+    type: object
+    properties:
+      error:
+        type: string
+        example: "Validation error"
+      message:
+        type: string
+        example: "Invalid email format"
+      statusCode:
+        type: integer
+        example: 400
