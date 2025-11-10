@@ -24,7 +24,9 @@ jobs:
 
       - name: Install API dependencies
         working-directory: apps/api
-        run: npm ci
+        run: |
+          npm ci --include=optional
+          npm rebuild sharp --platform=linux --arch=x64
 
       - name: Run API tests
         working-directory: apps/api
