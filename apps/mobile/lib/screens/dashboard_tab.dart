@@ -18,8 +18,14 @@ class _DashboardTabState extends State<DashboardTab> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final logProvider = Provider.of<HealthLogProvider>(context, listen: false);
-      final profileProvider = Provider.of<ProfileProvider>(context, listen: false);
+      final logProvider = Provider.of<HealthLogProvider>(
+        context,
+        listen: false,
+      );
+      final profileProvider = Provider.of<ProfileProvider>(
+        context,
+        listen: false,
+      );
       logProvider.fetchDailyCalories();
       profileProvider.fetchProfile();
     });
@@ -60,10 +66,7 @@ class _DashboardTabState extends State<DashboardTab> {
             const SizedBox(height: 8),
             const Text(
               'Track your progress towards your daily goals',
-              style: TextStyle(
-                fontSize: 16,
-                color: AppTheme.textLight,
-              ),
+              style: TextStyle(fontSize: 16, color: AppTheme.textLight),
             ),
             const SizedBox(height: 32),
             // Show loading state while checking profile
@@ -71,9 +74,7 @@ class _DashboardTabState extends State<DashboardTab> {
               const Card(
                 child: Padding(
                   padding: EdgeInsets.all(32.0),
-                  child: Center(
-                    child: CircularProgressIndicator(),
-                  ),
+                  child: Center(child: CircularProgressIndicator()),
                 ),
               ),
             // Show prompt if no profile exists
@@ -285,7 +286,8 @@ class _DashboardTabState extends State<DashboardTab> {
                             style: TextStyle(
                               fontSize: 48,
                               fontWeight: FontWeight.bold,
-                              color: (logProvider.dailyCaloriesConsumed -
+                              color:
+                                  (logProvider.dailyCaloriesConsumed -
                                           logProvider.dailyCaloriesBurned) >=
                                       0
                                   ? AppTheme.primary
@@ -302,10 +304,12 @@ class _DashboardTabState extends State<DashboardTab> {
                           ),
                           const SizedBox(height: 16),
                           _buildProgressBar(
-                            consumed: logProvider.dailyCaloriesConsumed -
+                            consumed:
+                                logProvider.dailyCaloriesConsumed -
                                 logProvider.dailyCaloriesBurned,
                             goal: profileProvider.goals!.calories,
-                            color: (logProvider.dailyCaloriesConsumed -
+                            color:
+                                (logProvider.dailyCaloriesConsumed -
                                         logProvider.dailyCaloriesBurned) >=
                                     0
                                 ? AppTheme.primary
@@ -316,6 +320,93 @@ class _DashboardTabState extends State<DashboardTab> {
                     ),
                   ),
                 ),
+              const SizedBox(height: 16),
+              // Sleep Card
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(24.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            'Sleep',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: AppTheme.text,
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.add_circle_outline),
+                            color: AppTheme.primary,
+                            onPressed: () =>
+                                _showSleepLogDialog(context, logProvider),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      if (logProvider.isLoading)
+                        const Center(
+                          child: Padding(
+                            padding: EdgeInsets.all(16.0),
+                            child: CircularProgressIndicator(),
+                          ),
+                        )
+                      else ...[
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text(
+                              logProvider.dailySleepDuration > 0
+                                  ? (logProvider.dailySleepDuration / 60)
+                                        .toStringAsFixed(1)
+                                  : '0',
+                              style: const TextStyle(
+                                fontSize: 48,
+                                fontWeight: FontWeight.bold,
+                                color: AppTheme.primary,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            const Padding(
+                              padding: EdgeInsets.only(bottom: 8.0),
+                              child: Text(
+                                'hrs',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  color: AppTheme.textLight,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        if (logProvider.dailySleepQuality != null) ...[
+                          const SizedBox(height: 8),
+                          Text(
+                            'Quality: ${_formatSleepQuality(logProvider.dailySleepQuality!)}',
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: AppTheme.textLight,
+                            ),
+                          ),
+                        ] else if (logProvider.dailySleepDuration == 0) ...[
+                          const SizedBox(height: 8),
+                          const Text(
+                            'No sleep logged today',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: AppTheme.textLight,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ],
+                  ),
+                ),
+              ),
               const SizedBox(height: 16),
               // Macros Section
               if (profileProvider.goals != null) ...[
@@ -612,5 +703,174 @@ class _DashboardTabState extends State<DashboardTab> {
         ),
       ),
     );
+  }
+
+  String _formatSleepQuality(String quality) {
+    switch (quality) {
+      case 'poor':
+        return 'Poor';
+      case 'fair':
+        return 'Fair';
+      case 'good':
+        return 'Good';
+      case 'excellent':
+        return 'Excellent';
+      default:
+        return quality;
+    }
+  }
+
+  void _showSleepLogDialog(
+    BuildContext context,
+    HealthLogProvider logProvider,
+  ) {
+    final durationController = TextEditingController();
+    final notesController = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+    final selectedQuality = ValueNotifier<String?>(null);
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: const Text('Log Sleep'),
+              content: Form(
+                key: formKey,
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      TextFormField(
+                        controller: durationController,
+                        keyboardType: TextInputType.number,
+                        decoration: const InputDecoration(
+                          labelText: 'Duration (hours)',
+                          hintText: 'e.g., 7.5',
+                          prefixIcon: Icon(Icons.bedtime),
+                        ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter sleep duration';
+                          }
+                          final hours = double.tryParse(value);
+                          if (hours == null || hours < 0 || hours > 24) {
+                            return 'Please enter a valid duration (0-24 hours)';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                      ValueListenableBuilder<String?>(
+                        valueListenable: selectedQuality,
+                        builder: (context, quality, _) {
+                          return DropdownButtonFormField<String>(
+                            initialValue: quality,
+                            decoration: const InputDecoration(
+                              labelText: 'Quality (Optional)',
+                              prefixIcon: Icon(Icons.star),
+                            ),
+                            items: const [
+                              DropdownMenuItem(
+                                value: 'poor',
+                                child: Text('Poor'),
+                              ),
+                              DropdownMenuItem(
+                                value: 'fair',
+                                child: Text('Fair'),
+                              ),
+                              DropdownMenuItem(
+                                value: 'good',
+                                child: Text('Good'),
+                              ),
+                              DropdownMenuItem(
+                                value: 'excellent',
+                                child: Text('Excellent'),
+                              ),
+                            ],
+                            onChanged: (value) {
+                              selectedQuality.value = value;
+                            },
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        controller: notesController,
+                        decoration: const InputDecoration(
+                          labelText: 'Notes (Optional)',
+                          prefixIcon: Icon(Icons.note),
+                        ),
+                        maxLines: 3,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    selectedQuality.dispose();
+                    Navigator.of(context).pop();
+                  },
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                  onPressed: () async {
+                    if (formKey.currentState!.validate()) {
+                      try {
+                        final hours = double.parse(durationController.text);
+                        final minutes = (hours * 60).round();
+
+                        await logProvider.createSleepLog(
+                          duration: minutes,
+                          quality: selectedQuality.value,
+                          notes: notesController.text.trim().isEmpty
+                              ? null
+                              : notesController.text.trim(),
+                        );
+
+                        if (context.mounted) {
+                          selectedQuality.dispose();
+                          Navigator.of(context).pop();
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Sleep logged successfully!'),
+                              backgroundColor: AppTheme.success,
+                            ),
+                          );
+                        }
+                      } catch (e) {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                'Failed to log sleep: ${e.toString()}',
+                              ),
+                              backgroundColor: AppTheme.danger,
+                            ),
+                          );
+                        }
+                      }
+                    }
+                  },
+                  child: const Text('Log Sleep'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    ).then((_) {
+      durationController.dispose();
+      notesController.dispose();
+      try {
+        selectedQuality.dispose();
+      } catch (e) {
+        // Already disposed
+      }
+    });
   }
 }

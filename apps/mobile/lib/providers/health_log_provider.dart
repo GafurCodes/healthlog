@@ -9,6 +9,8 @@ class HealthLogProvider with ChangeNotifier {
   int _dailyProtein = 0;
   int _dailyCarbs = 0;
   int _dailyFat = 0;
+  int _dailySleepDuration = 0;
+  String? _dailySleepQuality;
   bool _isLoading = false;
   String? _error;
 
@@ -18,6 +20,8 @@ class HealthLogProvider with ChangeNotifier {
   int get dailyProtein => _dailyProtein;
   int get dailyCarbs => _dailyCarbs;
   int get dailyFat => _dailyFat;
+  int get dailySleepDuration => _dailySleepDuration;
+  String? get dailySleepQuality => _dailySleepQuality;
   bool get isLoading => _isLoading;
   String? get error => _error;
 
@@ -97,6 +101,19 @@ class HealthLogProvider with ChangeNotifier {
       _dailyCaloriesBurned = _logs
           .where((log) => log.type == 'workout')
           .fold(0, (sum, log) => sum + log.caloriesBurned);
+
+      // Calculate sleep duration and quality from sleep logs
+      final sleepLogs = _logs.where((log) => log.type == 'sleep').toList();
+      if (sleepLogs.isNotEmpty) {
+        // Sum all sleep durations for the day
+        _dailySleepDuration = sleepLogs
+            .fold(0, (sum, log) => sum + log.sleepDuration);
+        // Get the most recent sleep quality
+        _dailySleepQuality = sleepLogs.last.sleepQuality;
+      } else {
+        _dailySleepDuration = 0;
+        _dailySleepQuality = null;
+      }
     } catch (e) {
       _error = e.toString();
       rethrow;
@@ -172,6 +189,41 @@ class HealthLogProvider with ChangeNotifier {
 
       await ApiService.createLog(
         type: 'meal',
+        metrics: metrics,
+        notes: notes,
+      );
+
+      // Refresh logs and daily calories
+      await Future.wait([
+        fetchLogs(),
+        fetchDailyCalories(),
+      ]);
+    } catch (e) {
+      _error = e.toString();
+      rethrow;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> createSleepLog({
+    int? duration,
+    String? quality,
+    String? notes,
+  }) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      final metrics = <String, dynamic>{};
+
+      if (duration != null) metrics['duration'] = duration;
+      if (quality != null) metrics['quality'] = quality;
+
+      await ApiService.createLog(
+        type: 'sleep',
         metrics: metrics,
         notes: notes,
       );

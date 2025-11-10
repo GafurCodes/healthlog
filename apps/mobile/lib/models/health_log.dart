@@ -59,5 +59,19 @@ class HealthLog {
     }
     return 0;
   }
+
+  int get sleepDuration {
+    if (type == 'sleep') {
+      return (metrics['duration'] as num?)?.toInt() ?? 0;
+    }
+    return 0;
+  }
+
+  String? get sleepQuality {
+    if (type == 'sleep') {
+      return metrics['quality'] as String?;
+    }
+    return null;
+  }
 }
 
