@@ -69,7 +69,7 @@ async function loadClip(): Promise<{
       "Xenova/clip-vit-large-patch14-336",
       {
         device: "cpu",
-        dtype: "fp16",
+        dtype: "fp32",
       }
     );
     clipProcessorPromise = AutoProcessor.from_pretrained(
