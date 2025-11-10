@@ -48,14 +48,9 @@ describe('api/logs', () => {
     expect(r.data.pageSize).toBe(25);
   });
 
-  it('list returns empty response on error', async () => {
+  it('list throws error on failure', async () => {
     (apiClient.get as jest.Mock).mockRejectedValue(new Error('fail'));
-    const r = await logsApi.list({ page: 3, pageSize: 5 });
-    expect(r.data.data).toEqual([]);
-    expect(r.data.page).toBe(3);
-    expect(r.data.pageSize).toBe(5);
-    expect(r.data.total).toBe(0);
-    expect(r.data.totalPages).toBe(1);
+    await expect(logsApi.list({ page: 3, pageSize: 5 })).rejects.toThrow('fail');
   });
 
   it('get wraps data into { data: Log } when API returns { data: Log }', async () => {
@@ -121,9 +116,8 @@ describe('api/logs', () => {
     expect(r).toEqual({ success: true, id: 'l6' });
   });
 
-  it('delete returns { success:false, id } on error', async () => {
+  it('delete throws error on failure', async () => {
     (apiClient.delete as jest.Mock).mockRejectedValue(new Error('x'));
-    const r = await logsApi.delete('l7');
-    expect(r).toEqual({ success: false, id: 'l7' });
+    await expect(logsApi.delete('l7')).rejects.toThrow('x');
   });
 });

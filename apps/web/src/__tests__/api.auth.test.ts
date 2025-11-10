@@ -63,7 +63,7 @@ describe('api/auth', () => {
     const r = await authApi.resetPassword('tok', 'NewP@ss1');
     expect(apiClient.post).toHaveBeenCalledWith('/auth/reset-password', {
       token: 'tok',
-      newPassword: 'NewP@ss1',
+      password: 'NewP@ss1',
     });
     expect(r.data.message).toBe('ok');
   });
