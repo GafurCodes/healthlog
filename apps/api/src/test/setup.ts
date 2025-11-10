@@ -24,6 +24,8 @@ beforeAll(async () => {
   process.env.SMTP_PASSWORD = 'password';
   process.env.APP_BASE_URL = 'http://localhost:3000';
   process.env.API_BASE_URL = 'http://localhost:4000/api';
+  process.env.SENDGRID_API_KEY = 'test-sendgrid-key-for-testing-purposes-only';
+  process.env.FRONTEND_URL = 'http://localhost:3000';
 
   initializeEnv();
   initializeEmailService();
